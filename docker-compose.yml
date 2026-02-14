@@ -1,0 +1,46 @@
+version: '3.8'
+
+services:
+  web:
+    build: .
+    container_name: courses_app
+    ports:
+      - "5000:5000"
+    environment:
+      - FLASK_ENV=production
+      - SECRET_KEY=${SECRET_KEY:-change-me-in-prod}
+      - DATABASE_URL=sqlite:///courses.db
+      - ADMIN_PASSWORD=${ADMIN_PASSWORD:-admin123}
+      - APP_NAME=${APP_NAME:-VTK Kokshetau}
+    volumes:
+      - ./app:/app/app
+      - ./app/courses.db:/app/courses.db
+    command: >
+      sh -c "cd app && 
+             flask --app app.py init-db &&
+             flask --app app.py seed-db &&
+             gunicorn --bind 0.0.0.0:5000 --workers 4 app:app"
+    restart: unless-stopped
+    networks:
+      - courses_network
+
+  # Optional: PostgreSQL для продакшена (раскомментируйте для использования)
+  # db:
+  #   image: postgres:15-alpine
+  #   container_name: courses_db
+  #   environment:
+  #     - POSTGRES_DB=courses_db
+  #     - POSTGRES_USER=courses_user
+  #     - POSTGRES_PASSWORD=your_password_here
+  #   volumes:
+  #     - postgres_data:/var/lib/postgresql/data
+  #   networks:
+  #     - courses_network
+  #   restart: unless-stopped
+
+networks:
+  courses_network:
+    driver: bridge
+
+# volumes:
+#   postgres_data:

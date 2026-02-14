@@ -1,0 +1,101 @@
+{% extends "base.html" %}
+
+{% block title %}Добавить кружок{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-lg-8">
+        <div class="card">
+            <div class="card-body p-4">
+                <h4 class="mb-4"><i class="fas fa-plus"></i> Добавить новый кружок</h4>
+                <form method="POST" enctype="multipart/form-data">
+                    <div class="row">
+                        <div class="col-md-12 mb-3">
+                            <label for="name" class="form-label"><strong>Название кружка*</strong></label>
+                            <input type="text" class="form-control" id="name" name="name" required maxlength="120">
+                        </div>
+
+                        <div class="col-md-6 mb-3">
+                            <label for="category" class="form-label"><strong>Категория*</strong></label>
+                            <select class="form-select" id="category" name="category" required>
+                                <option value="">Выберите категорию</option>
+                                <option value="sports">⚽ Спорт</option>
+                                <option value="art">🎨 Искусство</option>
+                                <option value="science">🔬 Наука</option>
+                                <option value="music">🎵 Музыка</option>
+                                <option value="other">📚 Прочее</option>
+                            </select>
+                        </div>
+
+                        <div class="col-md-6 mb-3">
+                            <label for="instructor" class="form-label">Преподаватель</label>
+                            <input type="text" class="form-control" id="instructor" name="instructor" maxlength="120">
+                        </div>
+
+                        <div class="col-md-12 mb-3">
+                            <label for="description" class="form-label">Описание</label>
+                            <textarea class="form-control" id="description" name="description" rows="4" maxlength="1000"></textarea>
+                        </div>
+
+                        <div class="col-md-12 mb-3">
+                            <label for="image" class="form-label">Обложка секции</label>
+                            <input type="file" class="form-control" id="image" name="image" accept=".png,.jpg,.jpeg,.gif,.webp">
+                            <img id="imagePreview" class="img-preview">
+                        </div>
+
+                        <div class="col-md-12 mb-3">
+                            <label for="gallery_images" class="form-label">Галерея секции</label>
+                            <input type="file" class="form-control" id="gallery_images" name="gallery_images" multiple accept=".png,.jpg,.jpeg,.gif,.webp">
+                            <small class="text-muted">Можно выбрать сразу несколько изображений.</small>
+                        </div>
+
+                        <div class="col-md-6 mb-3">
+                            <label for="min_age" class="form-label">Минимальный возраст</label>
+                            <input type="number" class="form-control" id="min_age" name="min_age" value="6" min="5" max="18">
+                        </div>
+
+                        <div class="col-md-6 mb-3">
+                            <label for="max_age" class="form-label">Максимальный возраст</label>
+                            <input type="number" class="form-control" id="max_age" name="max_age" value="18" min="5" max="18">
+                        </div>
+
+                        <div class="col-md-6 mb-3">
+                            <label for="max_students" class="form-label">Максимум студентов</label>
+                            <input type="number" class="form-control" id="max_students" name="max_students" value="20" min="1" max="100">
+                        </div>
+
+                        <div class="col-md-6 mb-3">
+                            <label for="schedule" class="form-label">Расписание</label>
+                            <input type="text" class="form-control" id="schedule" name="schedule" placeholder="Например: пн, ср, пт 15:00-16:30" maxlength="200">
+                        </div>
+
+                        <div class="col-md-6 mb-3">
+                            <label for="address" class="form-label">Адрес проведения</label>
+                            <input type="text" class="form-control" id="address" name="address" placeholder="Улица, дом, кабинет" maxlength="255">
+                        </div>
+
+                        <div class="col-md-6 mb-3">
+                            <label for="phone" class="form-label">Номер телефона</label>
+                            <input type="tel" class="form-control" id="phone" name="phone" placeholder="Например: +7 (999) 123-45-67" maxlength="20">
+                        </div>
+
+                    </div>
+
+                    <div class="d-flex gap-2">
+                        <button type="submit" class="btn btn-primary btn-lg">
+                            <i class="fas fa-plus"></i> Добавить кружок
+                        </button>
+                        <a href="/admin" class="btn btn-secondary btn-lg">
+                            <i class="fas fa-times"></i> Отмена
+                        </a>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>setupPreview('image','imagePreview');</script>
+{% endblock %}

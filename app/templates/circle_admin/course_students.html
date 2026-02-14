@@ -1,0 +1,40 @@
+{% extends "base.html" %}
+{% from "_macros.html" import avatar %}
+{% block title %}Студенты — {{ course.name }}{% endblock %}
+
+{% block content %}
+<div class="d-flex align-items-center gap-3 mb-4">
+    <a href="{{ url_for('circle_admin_courses') }}" class="btn btn-outline-secondary btn-sm"><i class="fas fa-arrow-left"></i></a>
+    <h4 class="mb-0"><i class="fas fa-users"></i> {{ course.name }}</h4>
+    <span class="badge bg-primary">{{ students|length }}/{{ course.max_students }}</span>
+    <a href="/course/{{ course.id }}" class="btn btn-outline-info btn-sm ms-auto"><i class="fas fa-eye"></i> Карточка</a>
+</div>
+
+{% if students %}
+<div class="card">
+    <div class="table-responsive">
+        <table class="table table-hover mb-0">
+            <thead><tr><th></th><th>Пользователь</th><th>Возраст</th><th>Телефон</th><th>Email</th><th></th></tr></thead>
+            <tbody>
+                {% for s in students %}
+                <tr>
+                    <td>{{ avatar(s, 'sm') }}</td>
+                    <td><strong>{{ s.username }}</strong><br><small class="text-muted">{{ s.first_name }} {{ s.last_name }}</small></td>
+                    <td>{% if s.age %}{{ s.age }} лет{% else %}—{% endif %}</td>
+                    <td>{% if s.phone %}<a href="tel:{{ s.phone }}">{{ s.phone }}</a>{% else %}<span class="text-muted">—</span>{% endif %}</td>
+                    <td><a href="mailto:{{ s.email }}">{{ s.email }}</a></td>
+                    <td>
+                        <form method="POST" action="{{ url_for('circle_admin_remove_student', course_id=course.id, student_id=s.id) }}" class="d-inline" onsubmit="return confirm('Удалить {{ s.username }}?');">
+                            <button class="btn btn-outline-danger btn-sm"><i class="fas fa-trash"></i></button>
+                        </form>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% else %}
+<div class="alert alert-info"><i class="fas fa-info-circle"></i> На этот кружок ещё никто не записался.</div>
+{% endif %}
+{% endblock %}

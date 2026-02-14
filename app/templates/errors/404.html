@@ -1,0 +1,18 @@
+{% extends "base.html" %}
+
+{% block title %}404 - Страница не найдена{% endblock %}
+
+{% block content %}
+<div class="text-center py-5">
+    <h1 style="font-size: 5rem; color: var(--vtk-primary); margin-bottom: 20px;">
+        <i class="fas fa-exclamation-triangle"></i> 404
+    </h1>
+    <h2>Страница не найдена</h2>
+    <p class="lead text-muted mb-4">
+        К сожалению, запрошенная страница не существует.
+    </p>
+    <a href="/" class="btn btn-primary btn-lg">
+        <i class="fas fa-home"></i> Вернуться на главную
+    </a>
+</div>
+{% endblock %}

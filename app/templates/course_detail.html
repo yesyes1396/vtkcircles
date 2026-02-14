@@ -1,0 +1,188 @@
+{% extends "base.html" %}
+{% from "_macros.html" import avatar %}
+{% block title %}{{ course.name }}{% endblock %}
+
+{% block content %}
+<nav aria-label="breadcrumb" class="mb-3">
+    <ol class="breadcrumb">
+        <li class="breadcrumb-item"><a href="/">Каталог</a></li>
+        <li class="breadcrumb-item active">{{ course.name }}</li>
+    </ol>
+</nav>
+
+<div class="row g-4">
+    <div class="col-lg-8">
+        <div class="card mb-4">
+            {% if course.image %}
+                <img src="/{{ course.image }}" alt="{{ course.name }}" class="card-img-top" style="max-height:340px;object-fit:cover;">
+            {% else %}
+                <div class="course-card-header no-image"><i class="fas fa-camera-retro"></i></div>
+            {% endif %}
+            <div class="card-body">
+                <div class="d-flex align-items-center gap-2 mb-3 flex-wrap">
+                    <span class="course-category">
+                        {% if course.category == 'sports' %}Спорт{% elif course.category == 'art' %}Искусство{% elif course.category == 'science' %}Наука{% elif course.category == 'music' %}Музыка{% else %}{{ course.category }}{% endif %}
+                    </span>
+                    {% if course.avg_rating %}
+                        <span class="text-warning"><i class="fas fa-star"></i> {{ course.avg_rating }}</span>
+                        <small class="text-muted">({{ course.reviews.count() }})</small>
+                    {% endif %}
+                    {% if can_manage %}
+                        {% if current_user.is_admin %}
+                            <a href="/admin/course/{{ course.id }}/edit" class="btn btn-outline-warning btn-sm ms-auto"><i class="fas fa-cog"></i> Настройки</a>
+                        {% else %}
+                            <a href="{{ url_for('circle_admin_edit_course', course_id=course.id) }}" class="btn btn-outline-warning btn-sm ms-auto"><i class="fas fa-cog"></i> Настройки</a>
+                        {% endif %}
+                    {% endif %}
+                </div>
+
+                <h2 class="mb-3">{{ course.name }}</h2>
+
+                {% if course.description %}
+                    <p class="text-muted mb-4">{{ course.description }}</p>
+                {% endif %}
+
+                <div class="row g-3">
+                    <div class="col-sm-6"><div class="profile-info"><strong>Возраст</strong><br>{{ course.min_age }}–{{ course.max_age }} лет</div></div>
+                    <div class="col-sm-6"><div class="profile-info"><strong>Расписание</strong><br>{{ course.schedule or 'Не указано' }}</div></div>
+                    <div class="col-sm-6"><div class="profile-info"><strong>Адрес</strong><br>{{ course.address or 'Не указан' }}</div></div>
+                    <div class="col-sm-6"><div class="profile-info"><strong>Преподаватель</strong><br>{{ course.instructor or 'Не указан' }}</div></div>
+                    <div class="col-sm-6"><div class="profile-info"><strong>Телефон</strong><br>{{ course.phone or 'Не указан' }}</div></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Gallery -->
+        {% if gallery_images %}
+        <div class="card mb-4">
+            <div class="card-body">
+                <h5 class="mb-3"><i class="fas fa-images"></i> Галерея</h5>
+                <div class="row g-2">
+                    {% for img in gallery_images %}
+                    <div class="col-4 col-md-3">
+                        <img src="/{{ img }}" alt="Фото {{ loop.index }}" class="gallery-thumb" data-bs-toggle="modal" data-bs-target="#galleryModal" data-index="{{ loop.index0 }}">
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+
+        <!-- Gallery Modal Carousel -->
+        <div class="modal fade" id="galleryModal" tabindex="-1">
+            <div class="modal-dialog modal-lg modal-dialog-centered">
+                <div class="modal-content" style="background:transparent;border:0;">
+                    <div class="modal-body p-0">
+                        <div id="galleryCarousel" class="carousel slide">
+                            <div class="carousel-inner">
+                                {% for img in gallery_images %}
+                                <div class="carousel-item {% if loop.first %}active{% endif %}">
+                                    <img src="/{{ img }}" class="d-block mx-auto" style="max-height:80vh;max-width:100%;object-fit:contain;border-radius:12px;">
+                                </div>
+                                {% endfor %}
+                            </div>
+                            {% if gallery_images|length > 1 %}
+                            <button class="carousel-control-prev" type="button" data-bs-target="#galleryCarousel" data-bs-slide="prev"><span class="carousel-control-prev-icon"></span></button>
+                            <button class="carousel-control-next" type="button" data-bs-target="#galleryCarousel" data-bs-slide="next"><span class="carousel-control-next-icon"></span></button>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% endif %}
+
+        <!-- Reviews -->
+        <div class="card mb-4">
+            <div class="card-body">
+                <h5 class="mb-3"><i class="fas fa-comments"></i> Отзывы ({{ reviews|length }})</h5>
+
+                {% if current_user.is_authenticated and is_enrolled %}
+                <form method="POST" action="{{ url_for('add_review', course_id=course.id) }}" class="mb-4 p-3" style="border:1px solid var(--vtk-border);border-radius:12px;">
+                    <div class="mb-2">
+                        <label class="form-label fw-semibold">Ваша оценка</label>
+                        <div class="star-rating">
+                            {% for i in range(5, 0, -1) %}
+                            <input type="radio" id="star{{ i }}" name="rating" value="{{ i }}" {% if user_review and user_review.rating == i %}checked{% endif %}>
+                            <label for="star{{ i }}"><i class="fas fa-star"></i></label>
+                            {% endfor %}
+                        </div>
+                    </div>
+                    <div class="mb-2">
+                        <textarea name="text" class="form-control" rows="2" placeholder="Напишите отзыв (необязательно)...">{{ user_review.text if user_review else '' }}</textarea>
+                    </div>
+                    <button class="btn btn-primary btn-sm"><i class="fas fa-paper-plane"></i> {{ 'Обновить' if user_review else 'Отправить' }}</button>
+                </form>
+                {% if user_review %}
+                <form method="POST" action="{{ url_for('delete_review', course_id=course.id) }}" class="mb-3">
+                    <button class="btn btn-outline-danger btn-sm"><i class="fas fa-trash"></i> Удалить отзыв</button>
+                </form>
+                {% endif %}
+                {% elif current_user.is_authenticated and not is_enrolled %}
+                <p class="text-muted mb-3"><i class="fas fa-info-circle"></i> Запишитесь на кружок, чтобы оставить отзыв.</p>
+                {% endif %}
+
+                {% if reviews %}
+                    {% for review in reviews %}
+                    <div class="review-card d-flex gap-3">
+                        <div class="flex-shrink-0">{{ avatar(review.user, 'md') }}</div>
+                        <div class="flex-grow-1">
+                            <div class="d-flex justify-content-between align-items-center mb-1">
+                                <strong>{{ review.user.first_name or review.user.username }} {{ review.user.last_name or '' }}</strong>
+                                <small class="text-muted">{{ review.created_at.strftime('%d.%m.%Y') }}</small>
+                            </div>
+                            <div class="stars-display mb-1">
+                                {% for i in range(1, 6) %}
+                                    <i class="fas fa-star {% if i <= review.rating %}filled{% endif %}"></i>
+                                {% endfor %}
+                            </div>
+                            {% if review.text %}<p class="mb-0 text-muted">{{ review.text }}</p>{% endif %}
+                        </div>
+                    </div>
+                    {% endfor %}
+                {% else %}
+                    <p class="text-muted mb-0">Пока нет отзывов.</p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    <!-- Sidebar -->
+    <div class="col-lg-4">
+        <div class="card sticky-top" style="top:90px;">
+            <div class="card-body">
+                <h5 class="mb-3"><i class="fas fa-users"></i> Места</h5>
+                <div class="progress mb-2" style="height:20px;">
+                    {% set pct = (course.enrollment_count / course.max_students * 100)|int %}
+                    <div class="progress-bar {% if course.is_full %}bg-danger{% elif pct > 75 %}bg-warning{% else %}bg-success{% endif %}" style="width:{{ pct }}%">{{ course.enrollment_count }}/{{ course.max_students }}</div>
+                </div>
+                <p class="text-muted mb-4">{% if course.is_full %}Мест нет{% else %}Свободно {{ course.available_slots }}{% endif %}</p>
+
+                {% if not current_user.is_authenticated %}
+                    <a href="/login" class="btn btn-primary w-100">Войти для записи</a>
+                {% elif is_enrolled %}
+                    <div class="alert alert-success py-2 mb-2"><i class="fas fa-check-circle"></i> Вы записаны</div>
+                    <form method="POST" action="/unenroll/{{ course.id }}"><button class="btn btn-outline-danger w-100">Отписаться</button></form>
+                {% elif course.is_full %}
+                    <button class="btn btn-secondary w-100" disabled>Нет мест</button>
+                {% elif current_user.age and (current_user.age < course.min_age or current_user.age > course.max_age) %}
+                    <div class="alert alert-warning py-2 mb-2">Возраст не подходит</div>
+                {% else %}
+                    <form method="POST" action="/enroll/{{ course.id }}"><button class="btn btn-primary w-100">Записаться</button></form>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.querySelectorAll('.gallery-thumb').forEach(thumb=>{
+    thumb.addEventListener('click',function(){
+        const idx=parseInt(this.dataset.index)||0;
+        const carousel=document.getElementById('galleryCarousel');
+        if(carousel){bootstrap.Carousel.getOrCreateInstance(carousel).to(idx);}
+    });
+});
+</script>
+{% endblock %}

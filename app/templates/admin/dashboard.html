@@ -1,0 +1,159 @@
+{% extends "base.html" %}
+{% from "_macros.html" import avatar %}
+{% block title %}Панель администратора{% endblock %}
+
+{% block content %}
+<div class="profile-header text-center mb-4">
+    <h1><i class="fas fa-shield-alt"></i> Панель администратора</h1>
+    <p class="lead mb-0">Управление секциями и пользователями</p>
+</div>
+
+<!-- Stats -->
+<div class="row g-3 mb-4">
+    {% set total_e = namespace(c=0) %}
+    {% for c in courses %}{% set total_e.c = total_e.c + c.enrollment_count %}{% endfor %}
+    {% set stats = [
+        ('book', 'Кружков', courses|length, 'primary'),
+        ('users', 'Пользователей', users|length, 'success'),
+        ('check-circle', 'Записей', total_e.c, 'warning'),
+        ('clock', 'На одобрение', pending_admins|length, 'danger')
+    ] %}
+    {% for icon, label, value, color in stats %}
+    <div class="col-6 col-md-3">
+        <div class="card text-center" style="border-top:3px solid var(--bs-{{ color }});">
+            <div class="card-body py-3">
+                <h3 class="mb-0 text-{{ color }}">{{ value }}</h3>
+                <small class="text-muted"><i class="fas fa-{{ icon }}"></i> {{ label }}</small>
+            </div>
+        </div>
+    </div>
+    {% endfor %}
+</div>
+
+<!-- Pending admins -->
+{% if pending_admins %}
+<div class="card border-danger mb-4">
+    <div class="card-body">
+        <h5 class="text-danger mb-3"><i class="fas fa-exclamation-triangle"></i> Ожидают одобрения</h5>
+        <div class="table-responsive">
+            <table class="table table-hover mb-0">
+                <thead><tr><th></th><th>Пользователь</th><th>Email</th><th>Телефон</th><th>Документ</th><th>Дата</th><th></th></tr></thead>
+                <tbody>
+                    {% for a in pending_admins %}
+                    <tr>
+                        <td>{{ avatar(a, 'sm') }}</td>
+                        <td><strong>{{ a.username }}</strong><br><small class="text-muted">{{ a.first_name }} {{ a.last_name }}</small></td>
+                        <td>{{ a.email }}</td>
+                        <td>{% if a.phone %}<a href="tel:{{ a.phone }}">{{ a.phone }}</a>{% else %}—{% endif %}</td>
+                        <td>{% if a.contact_document %}<a href="/{{ a.contact_document }}" target="_blank" class="btn btn-outline-primary btn-sm"><i class="fas fa-eye"></i></a>{% else %}—{% endif %}</td>
+                        <td><small>{{ a.created_at.strftime('%d.%m.%Y') }}</small></td>
+                        <td class="text-nowrap">
+                            <form method="POST" action="/admin/approve-circle-admin/{{ a.id }}" class="d-inline"><button class="btn btn-success btn-sm"><i class="fas fa-check"></i></button></form>
+                            <form method="POST" action="/admin/reject-circle-admin/{{ a.id }}" class="d-inline"><button class="btn btn-danger btn-sm"><i class="fas fa-times"></i></button></form>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endif %}
+
+<div class="row g-4">
+    <!-- Courses -->
+    <div class="col-lg-8">
+        <div class="card mb-4">
+            <div class="card-body">
+                <div class="d-flex justify-content-between align-items-center mb-3">
+                    <h5 class="mb-0"><i class="fas fa-book"></i> Кружки</h5>
+                    <a href="/admin/course/add" class="btn btn-primary btn-sm"><i class="fas fa-plus"></i> Добавить</a>
+                </div>
+                {% if courses %}
+                <div class="table-responsive">
+                    <table class="table table-hover mb-0">
+                        <thead><tr><th>Название</th><th>Записей</th><th></th></tr></thead>
+                        <tbody>
+                            {% for c in courses %}
+                            <tr>
+                                <td>
+                                    <strong>{{ c.name }}</strong><br>
+                                    <small class="text-muted">{{ c.instructor or '—' }}</small>
+                                </td>
+                                <td><span class="badge {% if c.is_full %}bg-danger{% else %}bg-success{% endif %}">{{ c.enrollment_count }}/{{ c.max_students }}</span></td>
+                                <td class="text-nowrap">
+                                    <a href="/course/{{ c.id }}" class="btn btn-outline-info btn-sm" title="Карточка"><i class="fas fa-eye"></i></a>
+                                    <a href="/admin/course/{{ c.id }}/enrollments" class="btn btn-outline-primary btn-sm" title="Участники"><i class="fas fa-users"></i></a>
+                                    <a href="/admin/course/{{ c.id }}/edit" class="btn btn-outline-warning btn-sm" title="Настройки"><i class="fas fa-cog"></i></a>
+                                    <form method="POST" action="/admin/course/{{ c.id }}/delete" class="d-inline" onsubmit="return confirm('Удалить?');"><button class="btn btn-outline-danger btn-sm"><i class="fas fa-trash"></i></button></form>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                {% else %}
+                <div class="alert alert-info mb-0">Кружков пока нет. <a href="/admin/course/add">Создать первый</a>.</div>
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- Users -->
+        <div class="card">
+            <div class="card-body">
+                <h5 class="mb-3"><i class="fas fa-users"></i> Пользователи</h5>
+                {% if users %}
+                <div class="table-responsive">
+                    <table class="table table-hover mb-0">
+                        <thead><tr><th></th><th>Пользователь</th><th>Тип</th><th>Статус</th><th></th></tr></thead>
+                        <tbody>
+                            {% for u in users %}
+                            {% if u.id != current_user.id %}
+                            <tr>
+                                <td>{{ avatar(u, 'sm') }}</td>
+                                <td><strong>{{ u.username }}</strong><br><small class="text-muted">{{ u.email }}</small></td>
+                                <td>
+                                    {% if u.is_admin %}<span class="badge bg-danger">Админ</span>
+                                    {% elif u.user_type == 'circle_admin' %}<span class="badge bg-warning text-dark">Админ кружка</span>
+                                    {% else %}<span class="badge bg-secondary">Студент</span>{% endif %}
+                                </td>
+                                <td>
+                                    {% if u.is_blocked %}<span class="badge bg-danger">Блокирован</span>
+                                    {% elif u.user_type == 'circle_admin' and not u.is_approved %}<span class="badge bg-warning text-dark">Ожидание</span>
+                                    {% else %}<span class="badge bg-success">Активен</span>{% endif %}
+                                </td>
+                                <td class="text-nowrap">
+                                    {% if not u.is_admin %}
+                                        {% if u.is_blocked %}
+                                        <form method="POST" action="{{ url_for('admin_unblock_user', user_id=u.id) }}" class="d-inline"><button class="btn btn-outline-success btn-sm"><i class="fas fa-unlock"></i></button></form>
+                                        {% else %}
+                                        <form method="POST" action="{{ url_for('admin_block_user', user_id=u.id) }}" class="d-inline" onsubmit="return confirm('Заблокировать?');"><button class="btn btn-outline-warning btn-sm"><i class="fas fa-ban"></i></button></form>
+                                        {% endif %}
+                                        <form method="POST" action="{{ url_for('admin_delete_user', user_id=u.id) }}" class="d-inline" onsubmit="return confirm('Удалить {{ u.username }}?');"><button class="btn btn-outline-danger btn-sm"><i class="fas fa-trash"></i></button></form>
+                                    {% endif %}
+                                </td>
+                            </tr>
+                            {% endif %}
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                {% else %}
+                <div class="alert alert-info mb-0">Нет пользователей.</div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    <!-- Sidebar -->
+    <div class="col-lg-4">
+        <div class="card mb-4">
+            <div class="card-body">
+                <h5 class="mb-3"><i class="fas fa-bolt"></i> Действия</h5>
+                <a href="/admin/course/add" class="btn btn-primary w-100 mb-2"><i class="fas fa-plus"></i> Добавить кружок</a>
+                <a href="/" class="btn btn-outline-secondary w-100"><i class="fas fa-home"></i> На главную</a>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

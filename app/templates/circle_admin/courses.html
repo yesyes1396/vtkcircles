@@ -1,0 +1,41 @@
+{% extends "base.html" %}
+{% block title %}Мои кружки{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div class="d-flex align-items-center gap-3">
+        <a href="{{ url_for('circle_admin_dashboard') }}" class="btn btn-outline-secondary btn-sm"><i class="fas fa-arrow-left"></i></a>
+        <h4 class="mb-0"><i class="fas fa-book"></i> Мои кружки</h4>
+    </div>
+    <a href="{{ url_for('circle_admin_create_course') }}" class="btn btn-primary btn-sm"><i class="fas fa-plus"></i> Создать</a>
+</div>
+
+{% if courses %}
+<div class="card">
+    <div class="table-responsive">
+        <table class="table table-hover mb-0">
+            <thead><tr><th>Название</th><th>Категория</th><th>Записей</th><th>Возраст</th><th></th></tr></thead>
+            <tbody>
+                {% for c in courses %}
+                <tr>
+                    <td><strong>{{ c.name }}</strong></td>
+                    <td><span class="course-category">{% if c.category == 'sports' %}Спорт{% elif c.category == 'art' %}Искусство{% elif c.category == 'science' %}Наука{% elif c.category == 'music' %}Музыка{% else %}{{ c.category }}{% endif %}</span></td>
+                    <td><span class="badge {% if c.is_full %}bg-danger{% else %}bg-success{% endif %}">{{ c.enrollment_count }}/{{ c.max_students }}</span></td>
+                    <td>{{ c.min_age }}–{{ c.max_age }}</td>
+                    <td class="text-nowrap">
+                        <a href="{{ url_for('circle_admin_students', course_id=c.id) }}" class="btn btn-outline-primary btn-sm"><i class="fas fa-users"></i></a>
+                        <a href="{{ url_for('course_detail', course_id=c.id) }}" class="btn btn-outline-info btn-sm" target="_blank"><i class="fas fa-eye"></i></a>
+                        <a href="{{ url_for('circle_admin_edit_course', course_id=c.id) }}" class="btn btn-outline-warning btn-sm"><i class="fas fa-edit"></i></a>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% else %}
+<div class="alert alert-info text-center">
+    У вас пока нет кружков. <a href="{{ url_for('circle_admin_create_course') }}">Создать первый</a>
+</div>
+{% endif %}
+{% endblock %}

@@ -1,0 +1,8 @@
+{# ---- Avatar with initials fallback ---- #}
+{% macro avatar(user, size='sm') %}
+{% if user.avatar %}
+<img src="/{{ user.avatar }}" class="avatar-{{ size }}" alt="{{ user.username }}">
+{% else %}
+<div class="avatar-{{ size }} avatar-initials">{{ user.initials }}</div>
+{% endif %}
+{% endmacro %}

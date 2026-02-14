@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html lang="ru" data-bs-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}{{ app_name }} — Портал секций{% endblock %}</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <meta name="csrf-token" content="{{ csrf_token() }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    {% block extra_css %}{% endblock %}
+</head>
+<body>
+    <nav class="navbar navbar-expand-lg sticky-top">
+        <div class="container">
+            <a class="navbar-brand d-flex align-items-center gap-2" href="/">
+                <i class="fas fa-graduation-cap"></i>
+                <span>{{ app_name }}</span>
+            </a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav"><span class="navbar-toggler-icon"></span></button>
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav ms-auto align-items-center gap-1">
+                    <li class="nav-item"><a class="nav-link" href="/"><i class="fas fa-home"></i> Главная</a></li>
+                    {% if current_user.is_authenticated %}
+                        <li class="nav-item"><a class="nav-link" href="/profile"><i class="fas fa-user-circle"></i> Кабинет</a></li>
+                        {% if current_user.is_admin %}
+                            <li class="nav-item"><a class="nav-link" href="/admin"><i class="fas fa-shield-alt"></i> Админ</a></li>
+                        {% endif %}
+                        {% if current_user.user_type == 'circle_admin' %}
+                            <li class="nav-item"><a class="nav-link" href="/circle-admin"><i class="fas fa-chalkboard-teacher"></i> Кружок</a></li>
+                        {% endif %}
+                        <li class="nav-item">
+                            <form method="POST" action="{{ url_for('logout') }}" class="d-inline mb-0">
+                                <input type="hidden" name="_csrf_token" value="{{ csrf_token() }}">
+                                <button type="submit" class="nav-link nav-btn-link"><i class="fas fa-sign-out-alt"></i> Выход</button>
+                            </form>
+                        </li>
+                    {% else %}
+                        <li class="nav-item"><a class="nav-link" href="/login"><i class="fas fa-sign-in-alt"></i> Вход</a></li>
+                        <li class="nav-item"><a class="nav-link btn-nav-register" href="/register"><i class="fas fa-user-plus"></i> Регистрация</a></li>
+                    {% endif %}
+                    <li class="nav-item ms-2">
+                        <button class="btn btn-sm btn-icon-toggle" id="themeToggle" title="Переключить тему">
+                            <i class="fas fa-moon" id="themeIcon"></i>
+                        </button>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </nav>
+
+    <main class="container py-4">
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                {% for category, message in messages %}
+                    <div class="alert alert-{{ category }} alert-dismissible fade show" role="alert">
+                        <i class="fas fa-{% if category == 'success' %}check-circle{% elif category == 'danger' %}exclamation-circle{% elif category == 'warning' %}exclamation-triangle{% else %}info-circle{% endif %} me-1"></i>
+                        {{ message }}
+                        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                    </div>
+                {% endfor %}
+            {% endif %}
+        {% endwith %}
+        {% block content %}{% endblock %}
+    </main>
+
+    <footer>
+        <div class="container text-center">
+            <p class="mb-1">&copy; 2026 {{ app_name }} &mdash; Портал секций и кружков</p>
+            <p class="footer-sub mb-0">Учебный проект ВТК</p>
+        </div>
+    </footer>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+    /* ---- CSRF auto-attach ---- */
+    (function(){
+        const t=document.querySelector('meta[name="csrf-token"]');
+        if(!t)return;
+        document.querySelectorAll('form').forEach(f=>{
+            if((f.method||'get').toLowerCase()!=='post')return;
+            if(f.querySelector('[name="_csrf_token"]'))return;
+            const h=document.createElement('input');
+            h.type='hidden';h.name='_csrf_token';h.value=t.content;
+            f.appendChild(h);
+        });
+    })();
+
+    /* ---- Theme toggle ---- */
+    (function(){
+        const html=document.documentElement;
+        const icon=document.getElementById('themeIcon');
+        const btn=document.getElementById('themeToggle');
+        const saved=localStorage.getItem('theme')||'light';
+        html.setAttribute('data-bs-theme',saved);
+        updateIcon(saved);
+        btn.addEventListener('click',()=>{
+            const next=html.getAttribute('data-bs-theme')==='dark'?'light':'dark';
+            html.setAttribute('data-bs-theme',next);
+            localStorage.setItem('theme',next);
+            updateIcon(next);
+        });
+        function updateIcon(t){icon.className=t==='dark'?'fas fa-sun':'fas fa-moon';}
+    })();
+
+    /* ---- Image preview helper ---- */
+    function setupPreview(inputId,previewId){
+        const input=document.getElementById(inputId);
+        if(!input)return;
+        input.addEventListener('change',function(){
+            const preview=document.getElementById(previewId);
+            if(!preview)return;
+            const file=this.files[0];
+            if(!file)return;
+            const reader=new FileReader();
+            reader.onload=e=>{preview.src=e.target.result;preview.style.display='block';};
+            reader.readAsDataURL(file);
+        });
+    }
+    </script>
+    {% block extra_js %}{% endblock %}
+</body>
+</html>

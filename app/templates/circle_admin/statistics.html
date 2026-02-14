@@ -1,0 +1,54 @@
+{% extends "base.html" %}
+{% block title %}Статистика{% endblock %}
+
+{% block content %}
+<div class="d-flex align-items-center gap-3 mb-4">
+    <a href="{{ url_for('circle_admin_dashboard') }}" class="btn btn-outline-secondary btn-sm"><i class="fas fa-arrow-left"></i></a>
+    <h4 class="mb-0"><i class="fas fa-chart-bar"></i> Статистика</h4>
+</div>
+
+<div class="row g-3 mb-4">
+    {% set stat_items = [('book', 'Кружков', stats.total_courses, 'primary'), ('users', 'Студентов', stats.total_students, 'success'), ('chair', 'Свободных мест', stats.total_slots, 'info')] %}
+    {% for icon, label, value, color in stat_items %}
+    <div class="col-md-4">
+        <div class="card text-center" style="border-top:3px solid var(--bs-{{ color }});">
+            <div class="card-body py-3">
+                <h3 class="mb-0 text-{{ color }}">{{ value }}</h3>
+                <small class="text-muted"><i class="fas fa-{{ icon }}"></i> {{ label }}</small>
+            </div>
+        </div>
+    </div>
+    {% endfor %}
+</div>
+
+{% if courses %}
+<div class="card">
+    <div class="card-body">
+        <h5 class="mb-3"><i class="fas fa-list"></i> Детали по кружкам</h5>
+        <div class="table-responsive">
+            <table class="table table-hover mb-0">
+                <thead><tr><th>Название</th><th>Студентов</th><th>Мест</th><th>Заполнение</th><th>Возраст</th></tr></thead>
+                <tbody>
+                    {% for c in courses %}
+                    <tr>
+                        <td><strong>{{ c.name }}</strong></td>
+                        <td>{{ c.enrollment_count }}</td>
+                        <td>{{ c.max_students }}</td>
+                        <td style="min-width:120px;">
+                            {% set pct = (c.enrollment_count / c.max_students * 100)|int %}
+                            <div class="progress" style="height:20px;">
+                                <div class="progress-bar {% if pct >= 80 %}bg-danger{% elif pct >= 50 %}bg-warning{% else %}bg-success{% endif %}" style="width:{{ pct }}%;">{{ pct }}%</div>
+                            </div>
+                        </td>
+                        <td>{{ c.min_age }}–{{ c.max_age }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% else %}
+<div class="alert alert-info"><i class="fas fa-info-circle"></i> У вас пока нет кружков.</div>
+{% endif %}
+{% endblock %}

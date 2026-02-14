@@ -1,0 +1,111 @@
+{% extends "base.html" %}
+{% from "_macros.html" import avatar %}
+{% block title %}Личный кабинет{% endblock %}
+
+{% block content %}
+<div class="profile-header text-center">
+    <h1>{{ avatar(current_user, 'lg') }} {{ current_user.username }}</h1>
+    <p class="lead mb-0">Управляйте профилем и записями</p>
+</div>
+
+<div class="row g-4">
+    <div class="col-lg-4">
+        <div class="card h-100">
+            <div class="card-body">
+                <h5 class="mb-3"><i class="fas fa-id-badge"></i> Профиль</h5>
+                <div class="text-center mb-3">
+                    {% if current_user.avatar %}
+                        <img src="/{{ current_user.avatar }}" id="avatarPreview" class="avatar-lg">
+                    {% else %}
+                        <div class="avatar-lg avatar-initials mx-auto" id="avatarPlaceholder" style="width:100px;height:100px;font-size:1.8rem;">{{ current_user.initials }}</div>
+                        <img id="avatarPreview" class="avatar-lg" style="display:none;">
+                    {% endif %}
+                    {% if current_user.user_type == 'circle_admin' and not current_user.avatar %}
+                        <div class="alert alert-warning py-1 mt-2 mb-0"><small><i class="fas fa-exclamation-triangle"></i> Загрузите аватар (обязательно)</small></div>
+                    {% endif %}
+                </div>
+                <form method="POST" enctype="multipart/form-data">
+                    <div class="mb-3">
+                        <label class="form-label">Имя</label>
+                        <input type="text" class="form-control" name="first_name" value="{{ current_user.first_name or '' }}">
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Фамилия</label>
+                        <input type="text" class="form-control" name="last_name" value="{{ current_user.last_name or '' }}">
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Дата рождения</label>
+                        <input type="date" class="form-control" name="birth_date" value="{{ current_user.birth_date.strftime('%Y-%m-%d') if current_user.birth_date else '' }}">
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Телефон</label>
+                        <input type="tel" class="form-control" name="phone" value="{{ current_user.phone or '' }}" placeholder="+7 (XXX) XXX-XX-XX">
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Аватар</label>
+                        <input type="file" class="form-control" id="avatarInput" name="avatar" accept=".png,.jpg,.jpeg,.gif,.webp">
+                    </div>
+                    <button class="btn btn-primary w-100"><i class="fas fa-save"></i> Сохранить</button>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-lg-8">
+        <div class="card mb-4">
+            <div class="card-body">
+                <h5 class="mb-3"><i class="fas fa-user"></i> Информация</h5>
+                <div class="row g-3">
+                    <div class="col-md-6"><div class="profile-info"><strong>Email</strong><br>{{ current_user.email }}</div></div>
+                    <div class="col-md-6"><div class="profile-info"><strong>Дата рождения</strong><br>{% if current_user.birth_date %}{{ current_user.birth_date.strftime('%d.%m.%Y') }}{% else %}<span class="text-muted">Не указана</span>{% endif %}</div></div>
+                    <div class="col-md-6"><div class="profile-info"><strong>Возраст</strong><br>{% if current_user.age %}{{ current_user.age }} лет{% else %}<span class="text-muted">—</span>{% endif %}</div></div>
+                    <div class="col-md-6"><div class="profile-info"><strong>Записей</strong><br>{{ current_user.courses|length }}</div></div>
+                </div>
+            </div>
+        </div>
+
+        <h4 class="mb-3"><i class="fas fa-list"></i> Ваши секции</h4>
+        {% if current_user.courses|length > 0 %}
+            <div class="row">
+                {% for course in current_user.courses %}
+                <div class="col-12 col-md-6 mb-3">
+                    <div class="card course-card">
+                        <div class="course-card-header {% if not course.image %}no-image{% endif %}" style="padding:14px;font-size:1.4rem;">
+                            {% if course.image %}
+                                <img src="/{{ course.image }}" style="height:140px;">
+                            {% else %}
+                                <i class="fas fa-camera-retro"></i>
+                            {% endif %}
+                        </div>
+                        <div class="course-card-body">
+                            <h6 class="course-title">{{ course.name }}</h6>
+                            <div class="d-grid gap-2 mt-2">
+                                <a href="/course/{{ course.id }}" class="btn btn-primary btn-sm">Подробнее</a>
+                                <form method="POST" action="/unenroll/{{ course.id }}"><button class="btn btn-outline-danger btn-sm w-100">Отписаться</button></form>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+        {% else %}
+            <div class="alert alert-info">Вы пока ни на что не записаны. <a href="/">Каталог секций</a></div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.getElementById('avatarInput').addEventListener('change',function(){
+    const file=this.files[0];if(!file)return;
+    const reader=new FileReader();
+    reader.onload=e=>{
+        const preview=document.getElementById('avatarPreview');
+        preview.src=e.target.result;preview.style.display='block';
+        const ph=document.getElementById('avatarPlaceholder');if(ph)ph.style.display='none';
+    };
+    reader.readAsDataURL(file);
+});
+</script>
+{% endblock %}

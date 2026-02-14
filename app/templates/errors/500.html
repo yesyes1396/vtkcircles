@@ -1,0 +1,18 @@
+{% extends "base.html" %}
+
+{% block title %}500 - Ошибка сервера{% endblock %}
+
+{% block content %}
+<div class="text-center py-5">
+    <h1 style="font-size: 5rem; color: var(--vtk-danger); margin-bottom: 20px;">
+        <i class="fas fa-server"></i> 500
+    </h1>
+    <h2>Ошибка сервера</h2>
+    <p class="lead text-muted mb-4">
+        Произошла внутренняя ошибка сервера. Пожалуйста, попробуйте позже.
+    </p>
+    <a href="/" class="btn btn-primary btn-lg">
+        <i class="fas fa-home"></i> Вернуться на главную
+    </a>
+</div>
+{% endblock %}

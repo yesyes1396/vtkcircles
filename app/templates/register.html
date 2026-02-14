@@ -1,0 +1,85 @@
+{% extends "base.html" %}
+{% block title %}Регистрация{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-body p-4">
+                <h4 class="text-center mb-4"><i class="fas fa-user-plus"></i> Создать аккаунт</h4>
+                <form method="POST" enctype="multipart/form-data">
+                    <div class="mb-4">
+                        <label class="form-label fw-semibold">Я регистрируюсь как:</label>
+                        <div class="btn-group w-100" role="group">
+                            <input type="radio" class="btn-check" name="user_type" id="student" value="student" {% if user_type == 'student' or not user_type %}checked{% endif %}>
+                            <label class="btn btn-outline-primary" for="student"><i class="fas fa-graduation-cap"></i> Студент</label>
+                            <input type="radio" class="btn-check" name="user_type" id="circle_admin" value="circle_admin" {% if user_type == 'circle_admin' %}checked{% endif %}>
+                            <label class="btn btn-outline-primary" for="circle_admin"><i class="fas fa-chalkboard-teacher"></i> Админ кружка</label>
+                        </div>
+                    </div>
+                    <hr>
+                    <div class="row g-3">
+                        <div class="col-12">
+                            <label for="username" class="form-label">Имя пользователя *</label>
+                            <input type="text" class="form-control" id="username" name="username" required minlength="3" maxlength="80" value="{{ username or '' }}">
+                        </div>
+                        <div class="col-12">
+                            <label for="email" class="form-label">Email *</label>
+                            <input type="email" class="form-control" id="email" name="email" required value="{{ email or '' }}">
+                        </div>
+                        <div class="col-md-6">
+                            <label for="first_name" class="form-label">Имя</label>
+                            <input type="text" class="form-control" id="first_name" name="first_name" value="{{ first_name or '' }}">
+                        </div>
+                        <div class="col-md-6">
+                            <label for="last_name" class="form-label">Фамилия</label>
+                            <input type="text" class="form-control" id="last_name" name="last_name" value="{{ last_name or '' }}">
+                        </div>
+                        <div class="col-12" id="age_field">
+                            <label for="age" class="form-label">Возраст</label>
+                            <input type="number" class="form-control" id="age" name="age" min="5" max="100" value="{{ age or '' }}">
+                        </div>
+                        <div class="col-12">
+                            <label for="phone" class="form-label">Телефон <span id="phone_required_mark" style="display:none;">*</span></label>
+                            <input type="tel" class="form-control" id="phone" name="phone" value="{{ phone or '' }}" placeholder="+7 (XXX) XXX-XX-XX">
+                        </div>
+                        <div class="col-12" id="organization_field" style="display:none;">
+                            <label for="organization" class="form-label">Организация</label>
+                            <input type="text" class="form-control" id="organization" name="organization" value="{{ organization or '' }}">
+                        </div>
+                        <div class="col-12" id="document_field" style="display:none;">
+                            <label for="contact_document" class="form-label">Документ (фото) *</label>
+                            <input type="file" class="form-control" id="contact_document" name="contact_document" accept=".png,.jpg,.jpeg,.gif,.webp">
+                        </div>
+                        <div class="col-md-6">
+                            <label for="password" class="form-label">Пароль *</label>
+                            <input type="password" class="form-control" id="password" name="password" required minlength="6">
+                        </div>
+                        <div class="col-md-6">
+                            <label for="password_confirm" class="form-label">Подтверждение *</label>
+                            <input type="password" class="form-control" id="password_confirm" name="password_confirm" required minlength="6">
+                        </div>
+                    </div>
+                    <button type="submit" class="btn btn-primary w-100 mt-4">Зарегистрироваться</button>
+                </form>
+                <hr>
+                <p class="text-center text-muted mb-0">Уже есть аккаунт? <a href="/login">Войти</a></p>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+function updateFormFields(){
+    const t=document.querySelector('input[name="user_type"]:checked').value;
+    document.getElementById('age_field').style.display=t==='student'?'':'none';
+    document.getElementById('organization_field').style.display=t==='circle_admin'?'':'none';
+    document.getElementById('document_field').style.display=t==='circle_admin'?'':'none';
+    document.getElementById('phone_required_mark').style.display=t==='circle_admin'?'':'none';
+}
+document.querySelectorAll('input[name="user_type"]').forEach(r=>r.addEventListener('change',updateFormFields));
+updateFormFields();
+</script>
+{% endblock %}
