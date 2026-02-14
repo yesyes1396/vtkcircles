@@ -13,16 +13,16 @@
     {% set total_e = namespace(c=0) %}
     {% for c in courses %}{% set total_e.c = total_e.c + c.enrollment_count %}{% endfor %}
     {% set stats = [
-        ('book', 'Кружков', courses|length, 'primary'),
-        ('users', 'Пользователей', users|length, 'success'),
-        ('check-circle', 'Записей', total_e.c, 'warning'),
-        ('clock', 'На одобрение', pending_admins|length, 'danger')
+        ('book', 'Кружков', courses|length, 'primary', false),
+        ('users', 'Пользователей', users|length, 'success', false),
+        ('check-circle', 'Записей', total_e.c, 'info', false),
+        ('clock', 'На одобрение', pending_admins|length, 'warning', true)
     ] %}
-    {% for icon, label, value, color in stats %}
+    {% for icon, label, value, color, highlight in stats %}
     <div class="col-6 col-md-3">
         <div class="card text-center" style="border-top:3px solid var(--bs-{{ color }});">
             <div class="card-body py-3">
-                <h3 class="mb-0 text-{{ color }}">{{ value }}</h3>
+                <h3 class="mb-0 {% if highlight %}stat-value-warning{% else %}stat-value{% endif %}">{{ value }}</h3>
                 <small class="text-muted"><i class="fas fa-{{ icon }}"></i> {{ label }}</small>
             </div>
         </div>

@@ -39,7 +39,7 @@
                     </div>
                     <div class="mb-3">
                         <label class="form-label">Телефон</label>
-                        <input type="tel" class="form-control" name="phone" value="{{ current_user.phone or '' }}" placeholder="+7 (XXX) XXX-XX-XX">
+                        <input type="tel" class="form-control phone-mask" name="phone" value="{{ current_user.phone or '' }}" placeholder="+7 (___) ___-__-__">
                     </div>
                     <div class="mb-3">
                         <label class="form-label">Аватар</label>
@@ -146,6 +146,26 @@ document.getElementById('avatarInput').addEventListener('change',function(){
         const ph=document.getElementById('avatarPlaceholder');if(ph)ph.style.display='none';
     };
     reader.readAsDataURL(file);
+});
+/* ---- Phone mask ---- */
+document.querySelectorAll('.phone-mask').forEach(function(input){
+    input.addEventListener('focus',function(){
+        if(!this.value) this.value='+7 (';
+    });
+    input.addEventListener('input',function(){
+        let x=this.value.replace(/\D/g,'');
+        if(x.length===0){this.value='';return;}
+        if(x[0]==='8'||x[0]==='7') x=x.substring(1);
+        let out='+7 (';
+        if(x.length>0) out+=x.substring(0,3);
+        if(x.length>=3) out+=') '+x.substring(3,6);
+        if(x.length>=6) out+='-'+x.substring(6,8);
+        if(x.length>=8) out+='-'+x.substring(8,10);
+        this.value=out;
+    });
+    input.addEventListener('keydown',function(e){
+        if(e.key==='Backspace'&&this.value==='+7 ('){e.preventDefault();this.value='';}
+    });
 });
 </script>
 {% endblock %}

@@ -28,20 +28,20 @@
                             <input type="email" class="form-control" id="email" name="email" required value="{{ email or '' }}">
                         </div>
                         <div class="col-md-6">
-                            <label for="first_name" class="form-label">Имя</label>
-                            <input type="text" class="form-control" id="first_name" name="first_name" value="{{ first_name or '' }}">
+                            <label for="first_name" class="form-label">Имя *</label>
+                            <input type="text" class="form-control" id="first_name" name="first_name" required value="{{ first_name or '' }}">
                         </div>
                         <div class="col-md-6">
-                            <label for="last_name" class="form-label">Фамилия</label>
-                            <input type="text" class="form-control" id="last_name" name="last_name" value="{{ last_name or '' }}">
+                            <label for="last_name" class="form-label">Фамилия *</label>
+                            <input type="text" class="form-control" id="last_name" name="last_name" required value="{{ last_name or '' }}">
                         </div>
-                        <div class="col-12" id="age_field">
-                            <label for="age" class="form-label">Возраст</label>
-                            <input type="number" class="form-control" id="age" name="age" min="5" max="100" value="{{ age or '' }}">
+                        <div class="col-12">
+                            <label for="birth_date" class="form-label">Дата рождения *</label>
+                            <input type="date" class="form-control" id="birth_date" name="birth_date" required value="{{ birth_date or '' }}">
                         </div>
                         <div class="col-12">
                             <label for="phone" class="form-label">Телефон <span id="phone_required_mark" style="display:none;">*</span></label>
-                            <input type="tel" class="form-control" id="phone" name="phone" value="{{ phone or '' }}" placeholder="+7 (XXX) XXX-XX-XX">
+                            <input type="tel" class="form-control phone-mask" id="phone" name="phone" value="{{ phone or '' }}" placeholder="+7 (___) ___-__-__">
                         </div>
                         <div class="col-12" id="organization_field" style="display:none;">
                             <label for="organization" class="form-label">Организация</label>
@@ -54,6 +54,7 @@
                         <div class="col-md-6">
                             <label for="password" class="form-label">Пароль *</label>
                             <input type="password" class="form-control" id="password" name="password" required minlength="6">
+                            <small class="text-muted">Мин. 6 символов, заглавная, строчная, цифра и спецсимвол</small>
                         </div>
                         <div class="col-md-6">
                             <label for="password_confirm" class="form-label">Подтверждение *</label>
@@ -74,12 +75,32 @@
 <script>
 function updateFormFields(){
     const t=document.querySelector('input[name="user_type"]:checked').value;
-    document.getElementById('age_field').style.display=t==='student'?'':'none';
     document.getElementById('organization_field').style.display=t==='circle_admin'?'':'none';
     document.getElementById('document_field').style.display=t==='circle_admin'?'':'none';
     document.getElementById('phone_required_mark').style.display=t==='circle_admin'?'':'none';
 }
 document.querySelectorAll('input[name="user_type"]').forEach(r=>r.addEventListener('change',updateFormFields));
 updateFormFields();
+
+/* ---- Phone mask +7 (XXX) XXX-XX-XX ---- */
+document.querySelectorAll('.phone-mask').forEach(function(input){
+    input.addEventListener('focus',function(){
+        if(!this.value) this.value='+7 (';
+    });
+    input.addEventListener('input',function(e){
+        let x=this.value.replace(/\D/g,'');
+        if(x.length===0){this.value='';return;}
+        if(x[0]==='8'||x[0]==='7') x=x.substring(1);
+        let out='+7 (';
+        if(x.length>0) out+=x.substring(0,3);
+        if(x.length>=3) out+=') '+x.substring(3,6);
+        if(x.length>=6) out+='-'+x.substring(6,8);
+        if(x.length>=8) out+='-'+x.substring(8,10);
+        this.value=out;
+    });
+    input.addEventListener('keydown',function(e){
+        if(e.key==='Backspace'&&this.value==='+7 ('){e.preventDefault();this.value='';}
+    });
+});
 </script>
 {% endblock %}

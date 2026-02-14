@@ -2,10 +2,9 @@ import os
 from flask import Flask, render_template, request, redirect, url_for, flash, jsonify, session, send_from_directory
 from flask_login import LoginManager, login_user, logout_user, login_required, current_user
 try:
-    from .models import db, User, Course, enrollment, Review, Complaint
+    from .models import db, User, Course, enrollment, Review, ReviewVote, Complaint, EnrollmentRequest
 except ImportError:
-    # Fallback для запуска app.py как standalone-скрипта
-    from models import db, User, Course, enrollment, Review, Complaint
+    from models import db, User, Course, enrollment, Review, ReviewVote, Complaint, EnrollmentRequest
 from datetime import datetime, timedelta, date
 from functools import wraps
 from werkzeug.utils import secure_filename
@@ -145,9 +144,9 @@ def get_course_gallery_images(course_id):
 
 
 def ensure_default_admin():
-    """Гарантировать наличие админа по умолчанию для демо"""
-    admin = User.query.filter_by(username='admin').first()
-    default_password = os.environ.get('ADMIN_PASSWORD', 'admin123')
+    """Гарантировать наличие главного администратора"""
+    default_password = os.environ.get('ADMIN_PASSWORD', '1396!YtUhSgBlJhS')
+    admin = User.query.filter_by(username='mainadmin').first()
     if admin:
         if not admin.is_admin:
             admin.is_admin = True
@@ -156,11 +155,8 @@ def ensure_default_admin():
         return
 
     admin = User(
-        username='admin',
-        email='admin@example.com',
-        first_name='Admin',
-        last_name='User',
-        birth_date=date(1994, 1, 1),
+        username='mainadmin',
+        email='mainadmin@vtk.local',
         is_admin=True,
         is_verified=True,
         is_approved=True
@@ -247,6 +243,14 @@ def validate_password_strength(password):
     """Валидация пароля на устойчивость"""
     if len(password) < 6:
         return False, "Пароль должен быть не менее 6 символов"
+    if not re.search(r'[A-ZА-ЯЁ]', password):
+        return False, "Пароль должен содержать хотя бы одну заглавную букву"
+    if not re.search(r'[a-zа-яё]', password):
+        return False, "Пароль должен содержать хотя бы одну строчную букву"
+    if not re.search(r'[0-9]', password):
+        return False, "Пароль должен содержать хотя бы одну цифру"
+    if not re.search(r'[^A-Za-zА-Яа-яЁё0-9]', password):
+        return False, "Пароль должен содержать хотя бы один спецсимвол (!@#$%...)"
     return True, "OK"
 
 def sanitize_input(text):
@@ -320,10 +324,15 @@ def course_detail(course_id):
     """Детальная страница кружка"""
     course = Course.query.get_or_404(course_id)
     is_enrolled = False
+    pending_request = None
     gallery_images = get_course_gallery_images(course.id)
     
     if current_user.is_authenticated:
         is_enrolled = current_user in course.students.all()
+        if not is_enrolled:
+            pending_request = EnrollmentRequest.query.filter_by(
+                user_id=current_user.id, course_id=course_id, status='pending'
+            ).first()
     
     reviews = Review.query.filter_by(course_id=course.id).order_by(Review.created_at.desc()).all()
     user_review = None
@@ -341,6 +350,7 @@ def course_detail(course_id):
         'course_detail.html',
         course=course,
         is_enrolled=is_enrolled,
+        pending_request=pending_request,
         gallery_images=gallery_images,
         reviews=reviews,
         user_review=user_review,
@@ -391,11 +401,38 @@ def delete_review(course_id):
     return redirect(url_for('course_detail', course_id=course_id))
 
 
-# ==================== Запись на кружок ====================
+# ==================== Голосование за отзыв ====================
+@app.route('/review/<int:review_id>/vote', methods=['POST'])
+@login_required
+def vote_review(review_id):
+    """Поставить лайк или дизлайк отзыву"""
+    review = Review.query.get_or_404(review_id)
+    vote_type = request.form.get('vote')  # 'like' or 'dislike'
+    if vote_type not in ('like', 'dislike'):
+        return redirect(url_for('course_detail', course_id=review.course_id))
+
+    is_like = (vote_type == 'like')
+    existing = ReviewVote.query.filter_by(user_id=current_user.id, review_id=review_id).first()
+
+    if existing:
+        if existing.is_like == is_like:
+            # Повторный клик — убрать голос
+            db.session.delete(existing)
+        else:
+            # Переключить голос
+            existing.is_like = is_like
+    else:
+        db.session.add(ReviewVote(user_id=current_user.id, review_id=review_id, is_like=is_like))
+
+    db.session.commit()
+    return redirect(url_for('course_detail', course_id=review.course_id) + '#review-' + str(review_id))
+
+
+# ==================== Запись на кружок (заявка) ====================
 @app.route('/enroll/<int:course_id>', methods=['POST'])
 @login_required
 def enroll_course(course_id):
-    """Записать пользователя на кружок"""
+    """Подать заявку на запись в кружок (одобряет админ кружка)"""
     course = Course.query.get_or_404(course_id)
     
     # Проверка возраста
@@ -404,21 +441,41 @@ def enroll_course(course_id):
             flash(f'Ваш возраст не подходит для этого кружка (требуется {course.min_age}-{course.max_age} лет).', 'warning')
             return redirect(url_for('course_detail', course_id=course_id))
     
-    # Проверка заполнения
     if course.is_full:
         flash('К сожалению, в этом кружке нет свободных мест.', 'warning')
         return redirect(url_for('course_detail', course_id=course_id))
     
-    # Проверка, не записан ли уже
     if current_user in course.students.all():
         flash('Вы уже записаны на этот кружок.', 'info')
         return redirect(url_for('course_detail', course_id=course_id))
     
-    # Добавление записи
-    current_user.courses.append(course)
-    db.session.commit()
-    flash(f'Вы успешно записались на кружок "{course.name}"!', 'success')
+    # Проверка, нет ли уже заявки в ожидании
+    existing = EnrollmentRequest.query.filter_by(
+        user_id=current_user.id, course_id=course_id, status='pending'
+    ).first()
+    if existing:
+        flash('Ваша заявка уже на рассмотрении.', 'info')
+        return redirect(url_for('course_detail', course_id=course_id))
     
+    req = EnrollmentRequest(user_id=current_user.id, course_id=course_id)
+    db.session.add(req)
+    db.session.commit()
+    flash('Заявка отправлена! Администратор кружка скоро её рассмотрит.', 'success')
+    
+    return redirect(url_for('course_detail', course_id=course_id))
+
+# ==================== Отмена заявки ====================
+@app.route('/cancel-enrollment/<int:course_id>', methods=['POST'])
+@login_required
+def cancel_enrollment(course_id):
+    """Отменить ожидающую заявку на кружок"""
+    req = EnrollmentRequest.query.filter_by(
+        user_id=current_user.id, course_id=course_id, status='pending'
+    ).first()
+    if req:
+        db.session.delete(req)
+        db.session.commit()
+        flash('Заявка отменена.', 'info')
     return redirect(url_for('course_detail', course_id=course_id))
 
 # ==================== Отписка от кружка ====================
@@ -534,102 +591,77 @@ def register():
         first_name = sanitize_input(request.form.get('first_name', ''))
         last_name = sanitize_input(request.form.get('last_name', ''))
         user_type = request.form.get('user_type', 'student').strip()
-        age_str = request.form.get('age', '').strip()
+        birth_date_str = request.form.get('birth_date', '').strip()
         organization = sanitize_input(request.form.get('organization', ''))
         phone = sanitize_input(request.form.get('phone', ''))
         
+        # Общая валидация render-helper
+        def reg_error(msg):
+            flash(msg, 'danger')
+            return render_template('register.html',
+                username=username, email=email, first_name=first_name,
+                last_name=last_name, birth_date=birth_date_str,
+                organization=organization, user_type=user_type, phone=phone)
+
         # Валидация типа пользователя
         if user_type not in ['student', 'circle_admin']:
-            flash('Неверный тип пользователя.', 'danger')
-            return render_template('register.html', 
-                username=username, email=email, first_name=first_name, 
-                last_name=last_name, age=age_str, organization=organization, user_type=user_type, phone=phone)
+            return reg_error('Неверный тип пользователя.')
         
         # Валидация имени пользователя
         if not username or len(username) < 3 or len(username) > 80:
-            flash('Имя пользователя должно содержать 3-80 символов.', 'danger')
-            return render_template('register.html', 
-                username=username, email=email, first_name=first_name, 
-                last_name=last_name, age=age_str, organization=organization, user_type=user_type, phone=phone)
+            return reg_error('Имя пользователя должно содержать 3-80 символов.')
         
         if not re.match(r'^[a-zA-Z0-9_\-]*$', username):
-            flash('Имя пользователя может содержать только буквы, цифры, подчеркивание и тире.', 'danger')
-            return render_template('register.html', 
-                username=username, email=email, first_name=first_name, 
-                last_name=last_name, age=age_str, organization=organization, user_type=user_type, phone=phone)
+            return reg_error('Имя пользователя может содержать только буквы, цифры, подчеркивание и тире.')
         
         # Валидация email
         if not re.match(r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$', email):
-            flash('Некорректный адрес электронной почты.', 'danger')
-            return render_template('register.html', 
-                username=username, email=email, first_name=first_name, 
-                last_name=last_name, age=age_str, organization=organization, user_type=user_type, phone=phone)
+            return reg_error('Некорректный адрес электронной почты.')
+        
+        # Имя и фамилия обязательны
+        if not first_name or not last_name:
+            return reg_error('Имя и фамилия обязательны.')
         
         # Валидация пароля на устойчивость
         password_valid, password_msg = validate_password_strength(password)
         if not password_valid:
-            flash(password_msg, 'danger')
-            return render_template('register.html', 
-                username=username, email=email, first_name=first_name, 
-                last_name=last_name, age=age_str, organization=organization, user_type=user_type, phone=phone)
+            return reg_error(password_msg)
         
-        # Парсинг даты рождения для студентов
+        # Парсинг даты рождения (обязательна)
         birth_date = None
-        if user_type == 'student' and age_str:
-            try:
-                age = int(age_str)
-                if age < 5 or age > 100:
-                    flash('Возраст должен быть от 5 до 100 лет.', 'danger')
-                    return render_template('register.html', 
-                        username=username, email=email, first_name=first_name, 
-                        last_name=last_name, age=age_str, organization=organization, user_type=user_type, phone=phone)
-                birth_date = (datetime.now() - timedelta(days=age*365)).date()
-            except ValueError:
-                flash('Неверный формат возраста.', 'danger')
-                return render_template('register.html', 
-                    username=username, email=email, first_name=first_name, 
-                    last_name=last_name, age=age_str, organization=organization, user_type=user_type, phone=phone)
+        if not birth_date_str:
+            return reg_error('Укажите дату рождения.')
+        try:
+            birth_date = datetime.strptime(birth_date_str, '%Y-%m-%d').date()
+            # Рассчитаем возраст
+            today = date.today()
+            age = today.year - birth_date.year - ((today.month, today.day) < (birth_date.month, birth_date.day))
+            if age < 14 or age > 22:
+                return reg_error(f'Возраст должен быть от 14 до 22 лет (ваш: {age}).')
+        except ValueError:
+            return reg_error('Неверный формат даты рождения.')
         
         # Валидация контактных данных для администраторов кружков
         if user_type == 'circle_admin':
             if not phone or len(phone) < 10:
-                flash('Пожалуйста, укажите корректный номер телефона.', 'danger')
-                return render_template('register.html', 
-                    username=username, email=email, first_name=first_name, 
-                    last_name=last_name, organization=organization, user_type=user_type, phone=phone)
+                return reg_error('Пожалуйста, укажите корректный номер телефона.')
             
-            # Валидация загрузки документа
             if 'contact_document' not in request.files or request.files['contact_document'].filename == '':
-                flash('Пожалуйста, прикрепите документ или фото.', 'danger')
-                return render_template('register.html', 
-                    username=username, email=email, first_name=first_name, 
-                    last_name=last_name, organization=organization, user_type=user_type, phone=phone)
+                return reg_error('Пожалуйста, прикрепите документ или фото.')
         
-        # Валидация
+        # Валидация обязательных полей
         if not username or not email or not password:
-            flash('Пожалуйста, заполните все обязательные поля.', 'danger')
-            return render_template('register.html', 
-                username=username, email=email, first_name=first_name, 
-                last_name=last_name, age=age_str, organization=organization, user_type=user_type, phone=phone)
+            return reg_error('Пожалуйста, заполните все обязательные поля.')
         
         if password != password_confirm:
-            flash('Пароли не совпадают.', 'danger')
-            return render_template('register.html', 
-                username=username, email=email, first_name=first_name, 
-                last_name=last_name, age=age_str, organization=organization, user_type=user_type, phone=phone)
+            return reg_error('Пароли не совпадают.')
         
         # Проверка существования пользователя
         if User.query.filter_by(username=username).first():
-            flash('Это имя пользователя уже занято.', 'danger')
-            return render_template('register.html', 
-                username=username, email=email, first_name=first_name, 
-                last_name=last_name, age=age_str, organization=organization, user_type=user_type, phone=phone)
+            return reg_error('Это имя пользователя уже занято.')
         
         if User.query.filter_by(email=email).first():
-            flash('Этот адрес электронной почты уже зарегистрирован.', 'danger')
-            return render_template('register.html', 
-                username=username, email=email, first_name=first_name, 
-                last_name=last_name, age=age_str, organization=organization, user_type=user_type, phone=phone)
+            return reg_error('Этот адрес электронной почты уже зарегистрирован.')
         
         # Обработка загрузки документа для администраторов кружков
         contact_document_path = None
@@ -648,8 +680,8 @@ def register():
             phone=phone,
             contact_document=contact_document_path,
             user_type=user_type,
-            is_verified=False,  # Email требует верификации
-            is_approved=False if user_type == 'circle_admin' else True,  # Администраторы кружков требуют одобрения
+            is_verified=False,
+            is_approved=False if user_type == 'circle_admin' else True,
             verification_token=generate_verification_token()
         )
         user.set_password(password)
@@ -854,8 +886,8 @@ def admin_add_course():
         name = request.form.get('name', '').strip()
         description = request.form.get('description', '').strip()
         category = request.form.get('category', '').strip()
-        min_age = request.form.get('min_age', 6, type=int)
-        max_age = request.form.get('max_age', 18, type=int)
+        min_age = request.form.get('min_age', 14, type=int)
+        max_age = request.form.get('max_age', 22, type=int)
         max_students = request.form.get('max_students', 20, type=int)
         schedule = request.form.get('schedule', '').strip()
         address = request.form.get('address', '').strip()
@@ -1033,8 +1065,8 @@ def seed_db():
             'name': 'Футбол',
             'description': 'Обучение основам футбола, техника удара, тактика игры.',
             'category': 'sports',
-            'min_age': 7,
-            'max_age': 16,
+            'min_age': 14,
+            'max_age': 22,
             'max_students': 15,
             'schedule': 'пн, ср, пт 16:00-17:30',
             'instructor': 'Иван Петров',
@@ -1044,8 +1076,8 @@ def seed_db():
             'name': 'Плавание',
             'description': 'Обучение различным стилям плавания, закаливание.',
             'category': 'sports',
-            'min_age': 5,
-            'max_age': 14,
+            'min_age': 14,
+            'max_age': 20,
             'max_students': 12,
             'schedule': 'вт, чт 15:00-16:00',
             'instructor': 'Елена Смирнова',
@@ -1055,8 +1087,8 @@ def seed_db():
             'name': 'Рисование',
             'description': 'Развитие творческих способностей, изучение живописи и графики.',
             'category': 'art',
-            'min_age': 6,
-            'max_age': 18,
+            'min_age': 14,
+            'max_age': 22,
             'max_students': 20,
             'schedule': 'сб 10:00-12:00',
             'instructor': 'Анна Соколова',
@@ -1066,8 +1098,8 @@ def seed_db():
             'name': 'Программирование Python',
             'description': 'Изучение основ программирования на Python, создание простых приложений.',
             'category': 'science',
-            'min_age': 10,
-            'max_age': 18,
+            'min_age': 14,
+            'max_age': 22,
             'max_students': 18,
             'schedule': 'ср, сб 17:00-18:30',
             'instructor': 'Михаил Козлов',
@@ -1077,8 +1109,8 @@ def seed_db():
             'name': 'Фортепиано',
             'description': 'Индивидуальные занятия по фортепиано для всех уровней.',
             'category': 'music',
-            'min_age': 6,
-            'max_age': 18,
+            'min_age': 14,
+            'max_age': 22,
             'max_students': 10,
             'schedule': 'по расписанию',
             'instructor': 'Наталья Волкова',
@@ -1088,8 +1120,8 @@ def seed_db():
             'name': 'Каратэ',
             'description': 'Обучение каратэ, развитие дисциплины и боевых навыков.',
             'category': 'sports',
-            'min_age': 8,
-            'max_age': 17,
+            'min_age': 14,
+            'max_age': 22,
             'max_students': 16,
             'schedule': 'пн, пт 18:00-19:30',
             'instructor': 'Виктор Романов',
@@ -1099,8 +1131,8 @@ def seed_db():
             'name': 'Танцы (Хип-хоп)',
             'description': 'Изучение современных танцевальных стилей, подготовка к выступлениям.',
             'category': 'art',
-            'min_age': 7,
-            'max_age': 16,
+            'min_age': 14,
+            'max_age': 22,
             'max_students': 20,
             'schedule': 'вт, чт 17:00-18:30',
             'instructor': 'Ксения Морозова',
@@ -1110,8 +1142,8 @@ def seed_db():
             'name': 'Робототехника',
             'description': 'Конструирование и программирование роботов на базе популярных платформ.',
             'category': 'science',
-            'min_age': 9,
-            'max_age': 16,
+            'min_age': 14,
+            'max_age': 22,
             'max_students': 14,
             'schedule': 'сб 14:00-16:00',
             'instructor': 'Дмитрий Королев',
@@ -1334,8 +1366,8 @@ def circle_admin_create_course():
         name = request.form.get('name', '').strip()
         description = request.form.get('description', '').strip()
         category = request.form.get('category', '').strip()
-        min_age = request.form.get('min_age', 6, type=int)
-        max_age = request.form.get('max_age', 18, type=int)
+        min_age = request.form.get('min_age', 14, type=int)
+        max_age = request.form.get('max_age', 22, type=int)
         max_students = request.form.get('max_students', 20, type=int)
         schedule = request.form.get('schedule', '').strip()
         address = request.form.get('address', '').strip()
@@ -1440,8 +1472,8 @@ def circle_admin_edit_course(course_id):
         course.name = request.form.get('name', '').strip()
         course.description = request.form.get('description', '').strip()
         course.category = request.form.get('category', '').strip()
-        course.min_age = request.form.get('min_age', 6, type=int)
-        course.max_age = request.form.get('max_age', 18, type=int)
+        course.min_age = request.form.get('min_age', 14, type=int)
+        course.max_age = request.form.get('max_age', 22, type=int)
         course.max_students = request.form.get('max_students', 20, type=int)
         course.schedule = request.form.get('schedule', '').strip()
         course.address = request.form.get('address', '').strip()
@@ -1528,10 +1560,15 @@ def circle_admin_students(course_id):
         flash('У вас нет прав на просмотр студентов этого кружка.', 'danger')
         return redirect(url_for('circle_admin_courses'))
     
-    # Получить всех студентов, записанных на этот кружок
+    # Получить одобренных студентов
     students = course.students.all()
+    # Получить заявки на рассмотрении
+    pending_requests = EnrollmentRequest.query.filter_by(
+        course_id=course_id, status='pending'
+    ).order_by(EnrollmentRequest.created_at.desc()).all()
     
-    return render_template('circle_admin/course_students.html', course=course, students=students)
+    return render_template('circle_admin/course_students.html',
+                           course=course, students=students, pending_requests=pending_requests)
 
 # ==================== Удаление студента из кружка ====================
 @app.route('/circle-admin/course/<int:course_id>/remove-student/<int:student_id>', methods=['POST'])
@@ -1562,6 +1599,52 @@ def circle_admin_remove_student(course_id, student_id):
     
     flash(f'Студент {student.username} удален из кружка "{course.name}".', 'success')
     return redirect(url_for('circle_admin_students', course_id=course_id))
+
+# ==================== Одобрение / отклонение заявки ====================
+@app.route('/circle-admin/enrollment/<int:request_id>/approve', methods=['POST'])
+@login_required
+def circle_admin_approve_enrollment(request_id):
+    """Одобрить заявку на запись"""
+    er = EnrollmentRequest.query.get_or_404(request_id)
+    course = Course.query.get_or_404(er.course_id)
+
+    instructor_name = f"{current_user.first_name or ''} {current_user.last_name or ''}".strip() or current_user.username
+    if current_user.user_type != 'circle_admin' or course.instructor != instructor_name:
+        flash('У вас нет прав.', 'danger')
+        return redirect(url_for('circle_admin_courses'))
+
+    if course.is_full:
+        flash('Нет свободных мест, невозможно одобрить.', 'warning')
+        return redirect(url_for('circle_admin_students', course_id=course.id))
+
+    # Одобряем: добавляем студента в кружок
+    student = User.query.get(er.user_id)
+    if student and student not in course.students.all():
+        student.courses.append(course)
+    er.status = 'approved'
+    er.resolved_at = datetime.utcnow()
+    db.session.commit()
+    flash(f'Студент {student.username} одобрен.', 'success')
+    return redirect(url_for('circle_admin_students', course_id=course.id))
+
+
+@app.route('/circle-admin/enrollment/<int:request_id>/reject', methods=['POST'])
+@login_required
+def circle_admin_reject_enrollment(request_id):
+    """Отклонить заявку на запись"""
+    er = EnrollmentRequest.query.get_or_404(request_id)
+    course = Course.query.get_or_404(er.course_id)
+
+    instructor_name = f"{current_user.first_name or ''} {current_user.last_name or ''}".strip() or current_user.username
+    if current_user.user_type != 'circle_admin' or course.instructor != instructor_name:
+        flash('У вас нет прав.', 'danger')
+        return redirect(url_for('circle_admin_courses'))
+
+    er.status = 'rejected'
+    er.resolved_at = datetime.utcnow()
+    db.session.commit()
+    flash('Заявка отклонена.', 'info')
+    return redirect(url_for('circle_admin_students', course_id=course.id))
 
 # Демо-админ при каждой загрузке приложения (в т.ч. gunicorn): admin / admin123
 with app.app_context():

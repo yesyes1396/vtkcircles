@@ -76,8 +76,8 @@ class Course(db.Model):
     name = db.Column(db.String(120), nullable=False, index=True)
     description = db.Column(db.Text)
     category = db.Column(db.String(80), nullable=False)  # sports, art, science, music, etc.
-    min_age = db.Column(db.Integer, default=6)
-    max_age = db.Column(db.Integer, default=18)
+    min_age = db.Column(db.Integer, default=14)
+    max_age = db.Column(db.Integer, default=22)
     max_students = db.Column(db.Integer, default=20)
     schedule = db.Column(db.String(200))  # e.g., "пн, ср, пт 15:00-16:30"
     instructor = db.Column(db.String(120))
@@ -130,6 +130,39 @@ class Review(db.Model):
 
     def __repr__(self):
         return f'<Review {self.id} by {self.user_id} for course {self.course_id}>'
+
+
+class ReviewVote(db.Model):
+    """Лайк / дизлайк отзыва"""
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
+    review_id = db.Column(db.Integer, db.ForeignKey('review.id'), nullable=False)
+    is_like = db.Column(db.Boolean, nullable=False)  # True = полезно, False = не полезно
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+
+    user = db.relationship('User', backref=db.backref('review_votes', lazy='dynamic'))
+    review = db.relationship('Review', backref=db.backref('votes', lazy='dynamic', cascade='all, delete-orphan'))
+
+    __table_args__ = (db.UniqueConstraint('user_id', 'review_id', name='uq_user_review_vote'),)
+
+    def __repr__(self):
+        return f'<ReviewVote user={self.user_id} review={self.review_id} like={self.is_like}>'
+
+
+class EnrollmentRequest(db.Model):
+    """Заявка на запись в кружок (требует одобрения админа кружка)"""
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
+    course_id = db.Column(db.Integer, db.ForeignKey('course.id'), nullable=False)
+    status = db.Column(db.String(20), default='pending')  # pending, approved, rejected
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    resolved_at = db.Column(db.DateTime)
+
+    user = db.relationship('User', backref=db.backref('enrollment_requests', lazy='dynamic'))
+    course = db.relationship('Course', backref=db.backref('enrollment_requests', lazy='dynamic'))
+
+    def __repr__(self):
+        return f'<EnrollmentRequest {self.id} user={self.user_id} course={self.course_id} status={self.status}>'
 
 
 class Complaint(db.Model):
