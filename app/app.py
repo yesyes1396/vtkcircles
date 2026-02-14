@@ -337,6 +337,7 @@ def course_detail(course_id):
     reviews = Review.query.filter_by(course_id=course.id).order_by(Review.created_at.desc()).all()
     user_review = None
     can_manage = False
+    pending_count = 0
     if current_user.is_authenticated:
         user_review = Review.query.filter_by(course_id=course.id, user_id=current_user.id).first()
         if current_user.is_admin:
@@ -345,6 +346,10 @@ def course_detail(course_id):
             iname = f"{current_user.first_name or ''} {current_user.last_name or ''}".strip() or current_user.username
             if course.instructor == iname:
                 can_manage = True
+        if can_manage:
+            pending_count = EnrollmentRequest.query.filter_by(
+                course_id=course_id, status='pending'
+            ).count()
 
     return render_template(
         'course_detail.html',
@@ -354,7 +359,8 @@ def course_detail(course_id):
         gallery_images=gallery_images,
         reviews=reviews,
         user_review=user_review,
-        can_manage=can_manage
+        can_manage=can_manage,
+        pending_count=pending_count
     )
 
 
@@ -1015,15 +1021,33 @@ def admin_delete_course(course_id):
     flash(f'Кружок "{course_name}" успешно удален.', 'success')
     return redirect(url_for('admin_dashboard'))
 
-# ==================== Просмотр записавшихся на кружок ====================
-@app.route('/admin/course/<int:course_id>/enrollments')
-@admin_required
-def admin_course_enrollments(course_id):
-    """Просмотр списка записавшихся студентов"""
+# ==================== Просмотр участников и заявок кружка ====================
+@app.route('/course/<int:course_id>/enrollments')
+@login_required
+def course_enrollments(course_id):
+    """Просмотр участников и заявок (для админа и админа кружка)"""
     course = Course.query.get_or_404(course_id)
+
+    # Проверка прав: системный админ или владелец-кружковод
+    allowed = False
+    if current_user.is_admin:
+        allowed = True
+    elif current_user.user_type == 'circle_admin':
+        iname = f"{current_user.first_name or ''} {current_user.last_name or ''}".strip() or current_user.username
+        if course.instructor == iname:
+            allowed = True
+    if not allowed:
+        flash('У вас нет прав доступа.', 'danger')
+        return redirect(url_for('course_detail', course_id=course_id))
+
     students = course.students.all()
-    
-    return render_template('admin/course_enrollments.html', course=course, students=students)
+    pending_requests = EnrollmentRequest.query.filter_by(
+        course_id=course_id, status='pending'
+    ).order_by(EnrollmentRequest.created_at.desc()).all()
+
+    return render_template('course_enrollments.html',
+                           course=course, students=students,
+                           pending_requests=pending_requests)
 
 # ==================== Служебные функции ====================
 def url_has_allowed_host_and_scheme(url):
@@ -1540,81 +1564,64 @@ def circle_admin_delete_course(course_id):
     flash(f'Кружок "{course_name}" успешно удален.', 'success')
     return redirect(url_for('circle_admin_courses'))
 
-# ==================== Просмотр студентов кружка ====================
+# ==================== Просмотр студентов кружка (редирект на единую страницу) ====================
 @app.route('/circle-admin/course/<int:course_id>/students')
 @login_required
 def circle_admin_students(course_id):
-    """Просмотр студентов, записанных на кружок"""
-    if current_user.user_type != 'circle_admin':
-        flash('У вас нет прав доступа.', 'danger')
-        return redirect(url_for('circle_admin_dashboard'))
-    
-    course = Course.query.get_or_404(course_id)
-    
-    # Проверка прав собственности
-    instructor_name = f"{current_user.first_name or ''} {current_user.last_name or ''}".strip() or current_user.username
-    if course.instructor != instructor_name:
-        flash('У вас нет прав на просмотр студентов этого кружка.', 'danger')
-        return redirect(url_for('circle_admin_courses'))
-    
-    # Получить одобренных студентов
-    students = course.students.all()
-    # Получить заявки на рассмотрении
-    pending_requests = EnrollmentRequest.query.filter_by(
-        course_id=course_id, status='pending'
-    ).order_by(EnrollmentRequest.created_at.desc()).all()
-    
-    return render_template('circle_admin/course_students.html',
-                           course=course, students=students, pending_requests=pending_requests)
+    """Редирект на единую страницу участников"""
+    return redirect(url_for('course_enrollments', course_id=course_id))
 
 # ==================== Удаление студента из кружка ====================
-@app.route('/circle-admin/course/<int:course_id>/remove-student/<int:student_id>', methods=['POST'])
+@app.route('/course/<int:course_id>/remove-student/<int:student_id>', methods=['POST'])
 @login_required
-def circle_admin_remove_student(course_id, student_id):
-    """Удалить студента из кружка"""
-    if current_user.user_type != 'circle_admin':
-        flash('У вас нет прав доступа.', 'danger')
-        return redirect(url_for('circle_admin_dashboard'))
-    
+def remove_student(course_id, student_id):
+    """Удалить студента из кружка (админ или кружковод)"""
     course = Course.query.get_or_404(course_id)
     student = User.query.get_or_404(student_id)
-    
-    # Проверка прав собственности
-    instructor_name = f"{current_user.first_name or ''} {current_user.last_name or ''}".strip() or current_user.username
-    if course.instructor != instructor_name:
-        flash('У вас нет прав на удаление студентов из этого кружка.', 'danger')
-        return redirect(url_for('circle_admin_courses'))
-    
-    # Проверка, записан ли студент на этот кружок
+
+    allowed = False
+    if current_user.is_admin:
+        allowed = True
+    elif current_user.user_type == 'circle_admin':
+        iname = f"{current_user.first_name or ''} {current_user.last_name or ''}".strip() or current_user.username
+        if course.instructor == iname:
+            allowed = True
+    if not allowed:
+        flash('У вас нет прав.', 'danger')
+        return redirect(url_for('course_enrollments', course_id=course_id))
+
     if student not in course.students:
         flash('Этот студент не записан на данный кружок.', 'danger')
-        return redirect(url_for('circle_admin_students', course_id=course_id))
-    
-    # Удаление студента из кружка
-    course.students.remove(student)
-    db.session.commit()
-    
-    flash(f'Студент {student.username} удален из кружка "{course.name}".', 'success')
-    return redirect(url_for('circle_admin_students', course_id=course_id))
+    else:
+        course.students.remove(student)
+        db.session.commit()
+        flash(f'Студент {student.username} удален из кружка "{course.name}".', 'success')
+
+    return redirect(url_for('course_enrollments', course_id=course_id))
 
 # ==================== Одобрение / отклонение заявки ====================
-@app.route('/circle-admin/enrollment/<int:request_id>/approve', methods=['POST'])
+@app.route('/enrollment/<int:request_id>/approve', methods=['POST'])
 @login_required
-def circle_admin_approve_enrollment(request_id):
+def approve_enrollment(request_id):
     """Одобрить заявку на запись"""
     er = EnrollmentRequest.query.get_or_404(request_id)
     course = Course.query.get_or_404(er.course_id)
 
-    instructor_name = f"{current_user.first_name or ''} {current_user.last_name or ''}".strip() or current_user.username
-    if current_user.user_type != 'circle_admin' or course.instructor != instructor_name:
+    allowed = False
+    if current_user.is_admin:
+        allowed = True
+    elif current_user.user_type == 'circle_admin':
+        iname = f"{current_user.first_name or ''} {current_user.last_name or ''}".strip() or current_user.username
+        if course.instructor == iname:
+            allowed = True
+    if not allowed:
         flash('У вас нет прав.', 'danger')
-        return redirect(url_for('circle_admin_courses'))
+        return redirect(url_for('course_enrollments', course_id=course.id))
 
     if course.is_full:
         flash('Нет свободных мест, невозможно одобрить.', 'warning')
-        return redirect(url_for('circle_admin_students', course_id=course.id))
+        return redirect(url_for('course_enrollments', course_id=course.id))
 
-    # Одобряем: добавляем студента в кружок
     student = User.query.get(er.user_id)
     if student and student not in course.students.all():
         student.courses.append(course)
@@ -1622,26 +1629,32 @@ def circle_admin_approve_enrollment(request_id):
     er.resolved_at = datetime.utcnow()
     db.session.commit()
     flash(f'Студент {student.username} одобрен.', 'success')
-    return redirect(url_for('circle_admin_students', course_id=course.id))
+    return redirect(url_for('course_enrollments', course_id=course.id))
 
 
-@app.route('/circle-admin/enrollment/<int:request_id>/reject', methods=['POST'])
+@app.route('/enrollment/<int:request_id>/reject', methods=['POST'])
 @login_required
-def circle_admin_reject_enrollment(request_id):
+def reject_enrollment(request_id):
     """Отклонить заявку на запись"""
     er = EnrollmentRequest.query.get_or_404(request_id)
     course = Course.query.get_or_404(er.course_id)
 
-    instructor_name = f"{current_user.first_name or ''} {current_user.last_name or ''}".strip() or current_user.username
-    if current_user.user_type != 'circle_admin' or course.instructor != instructor_name:
+    allowed = False
+    if current_user.is_admin:
+        allowed = True
+    elif current_user.user_type == 'circle_admin':
+        iname = f"{current_user.first_name or ''} {current_user.last_name or ''}".strip() or current_user.username
+        if course.instructor == iname:
+            allowed = True
+    if not allowed:
         flash('У вас нет прав.', 'danger')
-        return redirect(url_for('circle_admin_courses'))
+        return redirect(url_for('course_enrollments', course_id=course.id))
 
     er.status = 'rejected'
     er.resolved_at = datetime.utcnow()
     db.session.commit()
     flash('Заявка отклонена.', 'info')
-    return redirect(url_for('circle_admin_students', course_id=course.id))
+    return redirect(url_for('course_enrollments', course_id=course.id))
 
 # Демо-админ при каждой загрузке приложения (в т.ч. gunicorn): admin / admin123
 with app.app_context():

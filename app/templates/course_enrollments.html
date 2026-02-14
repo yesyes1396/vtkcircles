@@ -1,0 +1,111 @@
+{% extends "base.html" %}
+{% from "_macros.html" import avatar %}
+{% block title %}Участники — {{ course.name }}{% endblock %}
+
+{% block content %}
+<div class="d-flex align-items-center gap-3 mb-4 flex-wrap">
+    <a href="/course/{{ course.id }}" class="btn btn-outline-secondary btn-sm"><i class="fas fa-arrow-left"></i> К кружку</a>
+    <h4 class="mb-0"><i class="fas fa-users"></i> {{ course.name }}</h4>
+    <span class="badge bg-primary">{{ students|length }}/{{ course.max_students }}</span>
+</div>
+
+{# ==================== Ожидание одобрения ==================== #}
+<div class="card border-warning mb-4">
+    <div class="card-header bg-warning bg-opacity-10">
+        <h5 class="mb-0 text-warning"><i class="fas fa-clock"></i> Ожидают одобрения ({{ pending_requests|length }})</h5>
+    </div>
+    <div class="card-body">
+        {% if pending_requests %}
+        <div class="table-responsive">
+            <table class="table table-hover mb-0 align-middle">
+                <thead>
+                    <tr>
+                        <th style="width:48px"></th>
+                        <th>Студент</th>
+                        <th>Возраст</th>
+                        <th>Телефон</th>
+                        <th>Email</th>
+                        <th>Дата заявки</th>
+                        <th class="text-end">Действия</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for r in pending_requests %}
+                    <tr>
+                        <td>{{ avatar(r.user, 'sm') }}</td>
+                        <td>
+                            <a href="{{ url_for('user_public_profile', user_id=r.user.id) }}"><strong>{{ r.user.username }}</strong></a><br>
+                            <small class="text-muted">{{ r.user.first_name or '' }} {{ r.user.last_name or '' }}</small>
+                        </td>
+                        <td>{% if r.user.age %}{{ r.user.age }} лет{% else %}—{% endif %}</td>
+                        <td>{% if r.user.phone %}<a href="tel:{{ r.user.phone }}">{{ r.user.phone }}</a>{% else %}<span class="text-muted">—</span>{% endif %}</td>
+                        <td><a href="mailto:{{ r.user.email }}">{{ r.user.email }}</a></td>
+                        <td><small>{{ r.created_at.strftime('%d.%m.%Y %H:%M') }}</small></td>
+                        <td class="text-end text-nowrap">
+                            <form method="POST" action="{{ url_for('approve_enrollment', request_id=r.id) }}" class="d-inline">
+                                <input type="hidden" name="_csrf_token" value="{{ csrf_token() }}">
+                                <button class="btn btn-success btn-sm"><i class="fas fa-check"></i> Одобрить</button>
+                            </form>
+                            <form method="POST" action="{{ url_for('reject_enrollment', request_id=r.id) }}" class="d-inline" onsubmit="return confirm('Отклонить заявку?');">
+                                <input type="hidden" name="_csrf_token" value="{{ csrf_token() }}">
+                                <button class="btn btn-outline-danger btn-sm"><i class="fas fa-times"></i> Отклонить</button>
+                            </form>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% else %}
+        <p class="text-muted mb-0"><i class="fas fa-check-circle"></i> Нет заявок в ожидании.</p>
+        {% endif %}
+    </div>
+</div>
+
+{# ==================== Записанные участники ==================== #}
+<div class="card">
+    <div class="card-header">
+        <h5 class="mb-0"><i class="fas fa-user-check"></i> Записанные участники ({{ students|length }})</h5>
+    </div>
+    <div class="card-body">
+        {% if students %}
+        <div class="table-responsive">
+            <table class="table table-hover mb-0 align-middle">
+                <thead>
+                    <tr>
+                        <th style="width:48px"></th>
+                        <th>Студент</th>
+                        <th>Возраст</th>
+                        <th>Телефон</th>
+                        <th>Email</th>
+                        <th class="text-end">Действия</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for s in students %}
+                    <tr>
+                        <td>{{ avatar(s, 'sm') }}</td>
+                        <td>
+                            <a href="{{ url_for('user_public_profile', user_id=s.id) }}"><strong>{{ s.username }}</strong></a><br>
+                            <small class="text-muted">{{ s.first_name or '' }} {{ s.last_name or '' }}</small>
+                        </td>
+                        <td>{% if s.age %}{{ s.age }} лет{% else %}—{% endif %}</td>
+                        <td>{% if s.phone %}<a href="tel:{{ s.phone }}">{{ s.phone }}</a>{% else %}<span class="text-muted">—</span>{% endif %}</td>
+                        <td><a href="mailto:{{ s.email }}">{{ s.email }}</a></td>
+                        <td class="text-end">
+                            <form method="POST" action="{{ url_for('remove_student', course_id=course.id, student_id=s.id) }}" class="d-inline" onsubmit="return confirm('Удалить {{ s.username }} из кружка?');">
+                                <input type="hidden" name="_csrf_token" value="{{ csrf_token() }}">
+                                <button class="btn btn-outline-danger btn-sm"><i class="fas fa-user-minus"></i> Убрать</button>
+                            </form>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% else %}
+        <p class="text-muted mb-0"><i class="fas fa-info-circle"></i> На этот кружок ещё никто не записан.</p>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

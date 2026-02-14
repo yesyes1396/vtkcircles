@@ -28,11 +28,17 @@
                         <small class="text-muted">({{ course.reviews.count() }})</small>
                     {% endif %}
                     {% if can_manage %}
-                        {% if current_user.is_admin %}
-                            <a href="/admin/course/{{ course.id }}/edit" class="btn btn-outline-warning btn-sm ms-auto"><i class="fas fa-cog"></i> Настройки</a>
-                        {% else %}
-                            <a href="{{ url_for('circle_admin_edit_course', course_id=course.id) }}" class="btn btn-outline-warning btn-sm ms-auto"><i class="fas fa-cog"></i> Настройки</a>
-                        {% endif %}
+                        <div class="ms-auto d-flex gap-2">
+                            <a href="{{ url_for('course_enrollments', course_id=course.id) }}" class="btn btn-outline-primary btn-sm">
+                                <i class="fas fa-users"></i> Участники
+                                {% if pending_count %}<span class="badge bg-warning text-dark">{{ pending_count }}</span>{% endif %}
+                            </a>
+                            {% if current_user.is_admin %}
+                                <a href="/admin/course/{{ course.id }}/edit" class="btn btn-outline-warning btn-sm"><i class="fas fa-cog"></i> Настройки</a>
+                            {% else %}
+                                <a href="{{ url_for('circle_admin_edit_course', course_id=course.id) }}" class="btn btn-outline-warning btn-sm"><i class="fas fa-cog"></i> Настройки</a>
+                            {% endif %}
+                        </div>
                     {% endif %}
                 </div>
 
