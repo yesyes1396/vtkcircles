@@ -1077,7 +1077,7 @@ def seed_db():
             'description': 'Обучение различным стилям плавания, закаливание.',
             'category': 'sports',
             'min_age': 14,
-            'max_age': 20,
+            'max_age': 22,
             'max_students': 12,
             'schedule': 'вт, чт 15:00-16:00',
             'instructor': 'Елена Смирнова',
@@ -1478,9 +1478,6 @@ def circle_admin_edit_course(course_id):
         course.schedule = request.form.get('schedule', '').strip()
         course.address = request.form.get('address', '').strip()
         course.phone = request.form.get('phone', '').strip()
-        course.icon = request.form.get('icon', 'dumbbell').strip()
-        course.max_students = request.form.get('max_students', 20, type=int)
-        course.schedule = request.form.get('schedule', '').strip()
         course.icon = request.form.get('icon', 'dumbbell').strip()
         
         if not course.name or not course.category:

@@ -73,11 +73,11 @@
 
                         <div class="col-md-4 mb-3">
                             <label for="min_age" class="form-label">Мин. возраст</label>
-                            <input type="number" class="form-control" id="min_age" name="min_age" value="{{ course.min_age }}" min="5" max="18">
+                            <input type="number" class="form-control" id="min_age" name="min_age" value="{{ course.min_age }}" min="14" max="22">
                         </div>
                         <div class="col-md-4 mb-3">
                             <label for="max_age" class="form-label">Макс. возраст</label>
-                            <input type="number" class="form-control" id="max_age" name="max_age" value="{{ course.max_age }}" min="5" max="18">
+                            <input type="number" class="form-control" id="max_age" name="max_age" value="{{ course.max_age }}" min="14" max="22">
                         </div>
                         <div class="col-md-4 mb-3">
                             <label for="max_students" class="form-label">Макс. студентов</label>
@@ -94,7 +94,7 @@
                         </div>
                         <div class="col-md-6 mb-3">
                             <label for="phone" class="form-label">Телефон</label>
-                            <input type="tel" class="form-control" id="phone" name="phone" value="{{ course.phone or '' }}" maxlength="20">
+                            <input type="tel" class="form-control phone-mask" id="phone" name="phone" value="{{ course.phone or '' }}" placeholder="+7 (___) ___-__-__" maxlength="20">
                         </div>
                     </div>
 
