@@ -1,0 +1,96 @@
+{% extends "base.html" %}
+
+{% block title %}Мои жалобы{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-12">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <h1><i class="fas fa-exclamation-circle"></i> Мои жалобы</h1>
+            <a href="/" class="btn btn-secondary"><i class="fas fa-arrow-left"></i> На главную</a>
+        </div>
+
+        {% if complaints.items %}
+        <div class="list-group">
+            {% for complaint in complaints.items %}
+            <div class="list-group-item">
+                <div class="d-flex justify-content-between align-items-start">
+                    <div class="flex-grow-1">
+                        <h6 class="mb-2">
+                            <a href="/complaints/{{ complaint.id }}">{{ complaint.title }}</a>
+                        </h6>
+                        <small class="text-muted d-block mb-2">
+                            <i class="fas fa-circle-notch"></i> На: <strong>{{ complaint.course.name }}</strong> • 
+                            <i class="fas fa-calendar"></i> {{ complaint.created_at.strftime('%d.%m.%Y %H:%M') }}
+                        </small>
+                        <p class="mb-0 text-muted">{{ complaint.description[:100] }}{% if complaint.description | length > 100 %}...{% endif %}</p>
+                    </div>
+                    <div class="text-end ms-3">
+                        {% if complaint.status == 'open' %}
+                            <span class="badge bg-danger mb-2">
+                                <i class="fas fa-exclamation"></i> Открытая
+                            </span>
+                        {% elif complaint.status == 'in_review' %}
+                            <span class="badge bg-warning mb-2">
+                                <i class="fas fa-hourglass"></i> На рассмотрении
+                            </span>
+                        {% elif complaint.status == 'resolved' %}
+                            <span class="badge bg-info mb-2">
+                                <i class="fas fa-check"></i> Решена
+                            </span>
+                        {% elif complaint.status == 'closed' %}
+                            <span class="badge bg-secondary mb-2">
+                                <i class="fas fa-times-circle"></i> Закрыта
+                            </span>
+                        {% endif %}
+                        {% if complaint.admin_response %}
+                            <div class="text-success mb-2">
+                                <small><i class="fas fa-reply"></i> Есть ответ</small>
+                            </div>
+                        {% endif %}
+                        <br>
+                        <a href="/complaints/{{ complaint.id }}" class="btn btn-sm btn-outline-primary">
+                            <i class="fas fa-arrow-right"></i> Подробнее
+                        </a>
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+
+        <!-- Пагинация -->
+        {% if complaints.pages > 1 %}
+        <nav class="mt-4">
+            <ul class="pagination justify-content-center">
+                {% if complaints.has_prev %}
+                    <li class="page-item"><a class="page-link" href="?page=1">«</a></li>
+                    <li class="page-item"><a class="page-link" href="?page={{ complaints.prev_num }}">‹</a></li>
+                {% endif %}
+                
+                {% for page_num in complaints.iter_pages() %}
+                    {% if page_num %}
+                        {% if page_num == complaints.page %}
+                            <li class="page-item active"><span class="page-link">{{ page_num }}</span></li>
+                        {% else %}
+                            <li class="page-item"><a class="page-link" href="?page={{ page_num }}">{{ page_num }}</a></li>
+                        {% endif %}
+                    {% endif %}
+                {% endfor %}
+                
+                {% if complaints.has_next %}
+                    <li class="page-item"><a class="page-link" href="?page={{ complaints.next_num }}">›</a></li>
+                    <li class="page-item"><a class="page-link" href="?page={{ complaints.pages }}">»</a></li>
+                {% endif %}
+            </ul>
+        </nav>
+        {% endif %}
+        {% else %}
+        <div class="text-center py-5 text-muted">
+            <i class="fas fa-check-circle" style="font-size: 3rem; opacity: 0.5;"></i><br><br>
+            <h5>Жалоб не найдено</h5>
+            <p>Вы еще не подавали жалоб</p>
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

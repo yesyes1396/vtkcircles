@@ -42,7 +42,8 @@
 
 /* ---------- Base ---------- */
 *{font-family:"Inter","Segoe UI",Roboto,Arial,sans-serif;}
-body{background:var(--vtk-bg);color:var(--vtk-text);}
+html,body{height:100%;}
+body{background:var(--vtk-bg);color:var(--vtk-text);display:flex;flex-direction:column;}
 a{color:var(--vtk-primary);}
 a:hover{color:var(--vtk-primary-d);}
 
@@ -64,6 +65,12 @@ a:hover{color:var(--vtk-primary-d);}
     transition:.2s;
 }
 .btn-icon-toggle:hover{background:rgba(255,255,255,.25);color:#fff;}
+
+/* ---------- Dropdown menu ---------- */
+.dropdown-menu-dark{background:var(--vtk-nav-bg);border:1px solid rgba(255,255,255,.1);}
+.dropdown-item{color:rgba(255,255,255,.88)!important;transition:.15s;}
+.dropdown-item:hover,.dropdown-item.active{background:rgba(255,255,255,.15)!important;color:#fff!important;}
+.dropdown-toggle::after{border-color:#fff;}
 
 /* ---------- Cards ---------- */
 .card{
@@ -118,7 +125,7 @@ a:hover{color:var(--vtk-primary-d);}
 .table thead{background:var(--vtk-bg);}
 
 /* ---------- Footer ---------- */
-footer{background:var(--vtk-footer-bg);color:var(--vtk-footer-fg);padding:22px 0;margin-top:44px;}
+footer{background:var(--vtk-footer-bg);color:var(--vtk-footer-fg);padding:22px 0;margin-top:auto;width:100%;}
 .footer-sub{color:var(--vtk-muted);font-size:.85rem;}
 
 /* ---------- Buttons ---------- */

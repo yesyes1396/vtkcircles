@@ -1,0 +1,151 @@
+{% extends "base.html" %}
+
+{% block title %}Статистика — Админ{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-12">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <h1><i class="fas fa-bar-chart"></i> Статистика</h1>
+            <a href="/admin/dashboard" class="btn btn-secondary"><i class="fas fa-arrow-left"></i> Назад</a>
+        </div>
+
+        <!-- Основные метрики -->
+        <div class="row mb-4">
+            <div class="col-md-6 col-lg-3 mb-3">
+                <div class="card stat-card">
+                    <div class="card-body text-center">
+                        <div class="stat-value text-primary">{{ total_users }}</div>
+                        <div class="stat-label"><i class="fas fa-users"></i> Пользователей</div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-md-6 col-lg-3 mb-3">
+                <div class="card stat-card">
+                    <div class="card-body text-center">
+                        <div class="stat-value text-success">{{ total_courses }}</div>
+                        <div class="stat-label"><i class="fas fa-circle-notch"></i> Кружков</div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-md-6 col-lg-3 mb-3">
+                <div class="card stat-card">
+                    <div class="card-body text-center">
+                        <div class="stat-value text-info">{{ total_enrollments }}</div>
+                        <div class="stat-label"><i class="fas fa-user-check"></i> Записей</div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-md-6 col-lg-3 mb-3">
+                <div class="card stat-card">
+                    <div class="card-body text-center">
+                        <div class="stat-value text-warning">{{ total_complaints }}</div>
+                        <div class="stat-label"><i class="fas fa-exclamation-circle"></i> Жалоб</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Графики -->
+        <div class="row">
+            <!-- Распределение по возрастам -->
+            <div class="col-lg-6 mb-4">
+                <div class="card">
+                    <div class="card-header">
+                        <h5 class="mb-0"><i class="fas fa-chart-bar"></i> Распределение по возрастам</h5>
+                    </div>
+                    <div class="card-body">
+                        {% if age_groups %}
+                            <div class="list-group list-group-flush">
+                                {% for group, count in age_groups.items() %}
+                                <div class="list-group-item d-flex justify-content-between align-items-center">
+                                    <span>{{ group }} лет</span>
+                                    <div class="d-flex align-items-center gap-2">
+                                        <div class="progress flex-grow-1" style="min-width: 100px;">
+                                            <div class="progress-bar" role="progressbar" 
+                                                 style="width: {{ (count / (age_groups.values() | sum)) * 100 }}%;" 
+                                                 aria-valuenow="{{ count }}" aria-valuemin="0" 
+                                                 aria-valuemax="{{ age_groups.values() | sum }}"></div>
+                                        </div>
+                                        <span class="badge bg-primary">{{ count }}</span>
+                                    </div>
+                                </div>
+                                {% endfor %}
+                            </div>
+                        {% else %}
+                            <p class="text-muted text-center py-3">Нет данных</p>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+
+            <!-- Распределение по категориям кружков -->
+            <div class="col-lg-6 mb-4">
+                <div class="card">
+                    <div class="card-header">
+                        <h5 class="mb-0"><i class="fas fa-pie-chart"></i> Кружки по категориям</h5>
+                    </div>
+                    <div class="card-body">
+                        {% if categories %}
+                            <div class="list-group list-group-flush">
+                                {% for category, count in categories.items() %}
+                                <div class="list-group-item d-flex justify-content-between align-items-center">
+                                    <span>{{ category }}</span>
+                                    <div class="d-flex align-items-center gap-2">
+                                        <div class="progress flex-grow-1" style="min-width: 100px;">
+                                            <div class="progress-bar bg-success" role="progressbar" 
+                                                 style="width: {{ (count / (categories.values() | sum)) * 100 }}%;" 
+                                                 aria-valuenow="{{ count }}" aria-valuemin="0" 
+                                                 aria-valuemax="{{ categories.values() | sum }}"></div>
+                                        </div>
+                                        <span class="badge bg-success">{{ count }}</span>
+                                    </div>
+                                </div>
+                                {% endfor %}
+                            </div>
+                        {% else %}
+                            <p class="text-muted text-center py-3">Нет данных</p>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+.stat-card {
+    border: none;
+    background: linear-gradient(135deg, var(--vtk-primary), var(--vtk-primary-d));
+    color: white;
+    border-radius: 16px;
+}
+
+.stat-card:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 12px 24px rgba(0,0,0,0.15);
+}
+
+.stat-value {
+    font-size: 2.5rem;
+    font-weight: 700;
+    margin-bottom: 8px;
+}
+
+.stat-label {
+    font-size: 0.9rem;
+    opacity: 0.95;
+}
+
+.stat-card.text-primary { background: linear-gradient(135deg, #3347b8, #24338c) !important; color: white !important; }
+.stat-card.text-success { background: linear-gradient(135deg, #16a34a, #15803d) !important; color: white !important; }
+.stat-card.text-info { background: linear-gradient(135deg, #0284c7, #0369a1) !important; color: white !important; }
+.stat-card.text-warning { background: linear-gradient(135deg, #ea580c, #c2410c) !important; color: white !important; }
+
+.stat-card .stat-value { color: white; }
+.stat-card .stat-label { color: inherit; }
+</style>
+{% endblock %}

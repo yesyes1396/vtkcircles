@@ -11,11 +11,11 @@ if errorlevel 1 (
 
 if not exist ".venv\Scripts\python.exe" (
     echo Creating virtual environment...
-    py -3.11 -m venv .venv
+    py -m venv .venv
 )
 
 echo Installing dependencies...
-".venv\Scripts\python.exe" -m pip install --upgrade pip >nul
+".venv\Scripts\python.exe" -m pip install --upgrade pip
 ".venv\Scripts\python.exe" -m pip install -r requirements.txt
 
 if "%SECRET_KEY%"=="" set "SECRET_KEY=dev-local-secret-change-me"

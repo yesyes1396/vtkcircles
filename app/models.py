@@ -129,3 +129,23 @@ class Review(db.Model):
 
     def __repr__(self):
         return f'<Review {self.id} by {self.user_id} for course {self.course_id}>'
+
+
+class Complaint(db.Model):
+    """Модель жалобы на кружок"""
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
+    course_id = db.Column(db.Integer, db.ForeignKey('course.id'), nullable=False)
+    title = db.Column(db.String(200), nullable=False)
+    description = db.Column(db.Text, nullable=False)
+    status = db.Column(db.String(20), default='open')  # open, in_review, resolved, closed
+    admin_response = db.Column(db.Text)  # Ответ администратора
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    responded_at = db.Column(db.DateTime)  # Когда был дан ответ
+
+    user = db.relationship('User', backref=db.backref('complaints', lazy='dynamic'))
+    course = db.relationship('Course', backref=db.backref('complaints', lazy='dynamic'))
+
+    def __repr__(self):
+        return f'<Complaint {self.id} by {self.user_id} for course {self.course_id}>'

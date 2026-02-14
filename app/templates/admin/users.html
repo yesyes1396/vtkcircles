@@ -1,0 +1,142 @@
+{% extends "base.html" %}
+
+{% block title %}Пользователи — Админ{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-12">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <h1><i class="fas fa-users"></i> Управление пользователями</h1>
+            <a href="/admin/dashboard" class="btn btn-secondary"><i class="fas fa-arrow-left"></i> Назад</a>
+        </div>
+
+        <!-- Поиск -->
+        <div class="card mb-4">
+            <div class="card-body">
+                <form method="get" class="d-flex gap-2">
+                    <input type="text" name="search" class="form-control" placeholder="Поиск по имени, email..." value="{{ search }}">
+                    <button type="submit" class="btn btn-primary"><i class="fas fa-search"></i> Найти</button>
+                    {% if search %}
+                        <a href="/admin/users" class="btn btn-secondary"><i class="fas fa-times"></i> Сбросить</a>
+                    {% endif %}
+                </form>
+            </div>
+        </div>
+
+        <!-- Таблица пользователей -->
+        <div class="table-responsive">
+            <table class="table">
+                <thead>
+                    <tr>
+                        <th>Пользователь</th>
+                        <th>Email</th>
+                        <th>Тип</th>
+                        <th>Статус</th>
+                        <th>Дата создания</th>
+                        <th>Действия</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% if users.items %}
+                        {% for user in users.items %}
+                        <tr>
+                            <td>
+                                <div class="d-flex align-items-center gap-2">
+                                    {% if user.avatar %}
+                                        <img src="{{ url_for('uploaded_file', filename='avatars/' + user.avatar) }}" class="avatar-sm" alt="">
+                                    {% else %}
+                                        <div class="avatar-sm avatar-initials">{{ user.initials }}</div>
+                                    {% endif %}
+                                    <div>
+                                        <strong>{{ user.username }}</strong><br>
+                                        <small class="text-muted">{{ user.first_name }} {{ user.last_name }}</small>
+                                    </div>
+                                </div>
+                            </td>
+                            <td>{{ user.email }}</td>
+                            <td>
+                                {% if user.is_admin %}
+                                    <span class="badge bg-danger"><i class="fas fa-crown"></i> Администратор</span>
+                                {% elif user.user_type == 'circle_admin' %}
+                                    <span class="badge bg-warning"><i class="fas fa-chalkboard-teacher"></i> Админ кружка</span>
+                                {% else %}
+                                    <span class="badge bg-info"><i class="fas fa-user"></i> Студент</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                {% if user.is_blocked %}
+                                    <span class="badge bg-danger"><i class="fas fa-ban"></i> Заблокирован</span>
+                                {% elif user.is_admin or user.is_approved %}
+                                    <span class="badge bg-success"><i class="fas fa-check"></i> Активен</span>
+                                {% else %}
+                                    <span class="badge bg-warning"><i class="fas fa-hourglass"></i> На проверке</span>
+                                {% endif %}
+                            </td>
+                            <td>{{ user.created_at.strftime('%d.%m.%Y') }}</td>
+                            <td>
+                                <div class="btn-group btn-group-sm">
+                                    <button class="btn btn-outline-secondary" onclick="showUserDetails({{ user.id }})">
+                                        <i class="fas fa-eye"></i> Подробнее
+                                    </button>
+                                    {% if not user.is_admin %}
+                                        {% if user.is_blocked %}
+                                            <form method="post" action="/admin/user/{{ user.id }}/unblock" class="d-inline">
+                                                <input type="hidden" name="_csrf_token" value="{{ csrf_token() }}">
+                                                <button class="btn btn-outline-success btn-sm" type="submit" onclick="return confirm('Разблокировать пользователя?')">
+                                                    <i class="fas fa-unlock"></i> Разблокировать
+                                                </button>
+                                            </form>
+                                        {% else %}
+                                            <form method="post" action="/admin/user/{{ user.id }}/block" class="d-inline">
+                                                <input type="hidden" name="_csrf_token" value="{{ csrf_token() }}">
+                                                <button class="btn btn-outline-danger btn-sm" type="submit" onclick="return confirm('Заблокировать пользователя?')">
+                                                    <i class="fas fa-ban"></i> Заблокировать
+                                                </button>
+                                            </form>
+                                        {% endif %}
+                                    {% endif %}
+                                </div>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    {% else %}
+                        <tr>
+                            <td colspan="6" class="text-center py-5 text-muted">
+                                <i class="fas fa-inbox" style="font-size: 2rem; opacity: 0.5;"></i><br><br>
+                                Пользователи не найдены
+                            </td>
+                        </tr>
+                    {% endif %}
+                </tbody>
+            </table>
+        </div>
+
+        <!-- Пагинация -->
+        {% if users.pages > 1 %}
+        <nav class="mt-4">
+            <ul class="pagination justify-content-center">
+                {% if users.has_prev %}
+                    <li class="page-item"><a class="page-link" href="?page=1&search={{ search }}">«</a></li>
+                    <li class="page-item"><a class="page-link" href="?page={{ users.prev_num }}&search={{ search }}">‹</a></li>
+                {% endif %}
+                
+                {% for page_num in users.iter_pages() %}
+                    {% if page_num %}
+                        {% if page_num == users.page %}
+                            <li class="page-item active"><span class="page-link">{{ page_num }}</span></li>
+                        {% else %}
+                            <li class="page-item"><a class="page-link" href="?page={{ page_num }}&search={{ search }}">{{ page_num }}</a></li>
+                        {% endif %}
+                    {% endif %}
+                {% endfor %}
+                
+                {% if users.has_next %}
+                    <li class="page-item"><a class="page-link" href="?page={{ users.next_num }}&search={{ search }}">›</a></li>
+                    <li class="page-item"><a class="page-link" href="?page={{ users.pages }}&search={{ search }}">»</a></li>
+                {% endif %}
+            </ul>
+        </nav>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

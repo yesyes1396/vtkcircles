@@ -1,7 +1,7 @@
 import os
 from flask import Flask, render_template, request, redirect, url_for, flash, jsonify, session, send_from_directory
 from flask_login import LoginManager, login_user, logout_user, login_required, current_user
-from .models import db, User, Course, enrollment, Review
+from models import db, User, Course, enrollment, Review, Complaint
 from datetime import datetime, timedelta, date
 from functools import wraps
 from werkzeug.utils import secure_filename
@@ -685,12 +685,8 @@ def logout():
 @app.route('/admin')
 @admin_required
 def admin_dashboard():
-    """Панель администратора"""
-    courses = Course.query.all()
-    users = User.query.all()
-    pending_admins = User.query.filter_by(user_type='circle_admin', is_approved=False).all()
-    
-    return render_template('admin/dashboard.html', courses=courses, users=users, pending_admins=pending_admins)
+    """Панель администратора (перенаправление на новый dashboard)"""
+    return redirect(url_for('admin_dashboard_main'))
 
 # ==================== Модерация администраторов кружков ====================
 @app.route('/admin/approve-circle-admin/<int:user_id>', methods=['POST'])
@@ -1094,6 +1090,184 @@ def seed_db():
     db.session.commit()
     print('База данных заполнена тестовыми данными.')
 
+# ==================== Новые маршруты админ-панели ====================
+
+@app.route('/admin/dashboard')
+@admin_required
+def admin_dashboard_main():
+    """Главная страница админ-панели"""
+    courses = Course.query.all()
+    users = User.query.all()
+    pending_admins = User.query.filter_by(user_type='circle_admin', is_approved=False).all()
+    complaints = Complaint.query.filter_by(status='open').all()
+    
+    return render_template('admin/dashboard.html', 
+                         courses=courses, 
+                         users=users, 
+                         pending_admins=pending_admins,
+                         complaints=complaints)
+
+@app.route('/admin/users')
+@admin_required
+def admin_users():
+    """Управление пользователями"""
+    page = request.args.get('page', 1, type=int)
+    search = request.args.get('search', '').strip()
+    
+    query = User.query
+    if search:
+        query = query.filter((User.username.ilike(f'%{search}%')) | 
+                            (User.email.ilike(f'%{search}%')) |
+                            (User.first_name.ilike(f'%{search}%')))
+    
+    users = query.paginate(page=page, per_page=20)
+    return render_template('admin/users.html', users=users, search=search)
+
+@app.route('/admin/courses')
+@admin_required
+def admin_courses():
+    """Управление кружками"""
+    page = request.args.get('page', 1, type=int)
+    search = request.args.get('search', '').strip()
+    
+    query = Course.query
+    if search:
+        query = query.filter(Course.name.ilike(f'%{search}%') | 
+                            Course.category.ilike(f'%{search}%'))
+    
+    courses = query.paginate(page=page, per_page=20)
+    return render_template('admin/courses.html', courses=courses, search=search)
+
+@app.route('/admin/statistics')
+@admin_required
+def admin_statistics():
+    """Статистика"""
+    total_users = User.query.count()
+    total_courses = Course.query.count()
+    total_enrollments = db.session.query(enrollment).count()
+    total_complaints = Complaint.query.count()
+    
+    # Распределение по возрасту
+    age_groups = {}
+    for user in User.query.all():
+        if user.age:
+            group = f"{(user.age // 5) * 5}-{(user.age // 5) * 5 + 4}"
+            age_groups[group] = age_groups.get(group, 0) + 1
+    
+    # Распределение по категориям кружков
+    categories = {}
+    for course in Course.query.all():
+        categories[course.category] = categories.get(course.category, 0) + 1
+    
+    return render_template('admin/statistics.html',
+                          total_users=total_users,
+                          total_courses=total_courses,
+                          total_enrollments=total_enrollments,
+                          total_complaints=total_complaints,
+                          age_groups=age_groups,
+                          categories=categories)
+
+@app.route('/admin/moderation')
+@admin_required
+def admin_moderation():
+    """Модерация пользователей"""
+    pending_admins = User.query.filter_by(user_type='circle_admin', is_approved=False).all()
+    blocked_users = User.query.filter_by(is_blocked=True).all()
+    
+    return render_template('admin/moderation.html', 
+                          pending_admins=pending_admins,
+                          blocked_users=blocked_users)
+
+@app.route('/admin/complaints')
+@admin_required
+def admin_complaints():
+    """Просмотр жалоб"""
+    page = request.args.get('page', 1, type=int)
+    status = request.args.get('status', '').strip()
+    
+    query = Complaint.query
+    if status:
+        query = query.filter_by(status=status)
+    
+    complaints = query.order_by(Complaint.created_at.desc()).paginate(page=page, per_page=20)
+    return render_template('admin/complaints.html', complaints=complaints, current_status=status)
+
+@app.route('/admin/complaints/<int:complaint_id>')
+@admin_required
+def admin_complaint_detail(complaint_id):
+    """Просмотр и ответ на конкретную жалобу"""
+    complaint = Complaint.query.get_or_404(complaint_id)
+    return render_template('admin/complaint_detail.html', complaint=complaint)
+
+@app.route('/admin/complaints/<int:complaint_id>/respond', methods=['POST'])
+@admin_required
+def admin_respond_complaint(complaint_id):
+    """Дать ответ на жалобу"""
+    complaint = Complaint.query.get_or_404(complaint_id)
+    response = request.form.get('response', '').strip()
+    new_status = request.form.get('status', 'in_review').strip()
+    
+    if not response:
+        flash('Ответ не может быть пустым.', 'danger')
+        return redirect(url_for('admin_complaint_detail', complaint_id=complaint_id))
+    
+    complaint.admin_response = response
+    complaint.status = new_status
+    complaint.responded_at = datetime.utcnow()
+    db.session.commit()
+    
+    flash('Ответ на жалобу отправлен.', 'success')
+    return redirect(url_for('admin_complaints'))
+
+@app.route('/course/<int:course_id>/complain', methods=['GET', 'POST'])
+@login_required
+def submit_complaint(course_id):
+    """Отправить жалобу на кружок"""
+    course = Course.query.get_or_404(course_id)
+    
+    if request.method == 'POST':
+        title = request.form.get('title', '').strip()
+        description = request.form.get('description', '').strip()
+        
+        if not title or not description:
+            flash('Заполните все поля.', 'danger')
+            return redirect(url_for('submit_complaint', course_id=course_id))
+        
+        complaint = Complaint(
+            user_id=current_user.id,
+            course_id=course_id,
+            title=title,
+            description=description
+        )
+        db.session.add(complaint)
+        db.session.commit()
+        
+        flash('Ваша жалоба успешно отправлена. Администратор вскоре ответит.', 'success')
+        return redirect(url_for('course_detail', course_id=course_id))
+    
+    return render_template('complaint_form.html', course=course)
+
+@app.route('/my/complaints')
+@login_required
+def my_complaints():
+    """Мои жалобы"""
+    page = request.args.get('page', 1, type=int)
+    complaints = current_user.complaints.order_by(Complaint.created_at.desc()).paginate(page=page, per_page=10)
+    return render_template('my_complaints.html', complaints=complaints)
+
+@app.route('/complaints/<int:complaint_id>')
+@login_required
+def complaint_detail(complaint_id):
+    """Просмотр детали жалобы (для отправителя)"""
+    complaint = Complaint.query.get_or_404(complaint_id)
+    
+    # Проверка: может ли пользователь просматривать эту жалобу
+    if complaint.user_id != current_user.id and not current_user.is_admin:
+        flash('Вам не разрешено просматривать эту жалобу.', 'danger')
+        return redirect(url_for('index'))
+    
+    return render_template('complaint_detail.html', complaint=complaint)
+
 # ==================== Панель администратора кружка ====================
 @app.route('/circle-admin')
 @login_required
@@ -1352,12 +1526,10 @@ def circle_admin_remove_student(course_id, student_id):
     flash(f'Студент {student.username} удален из кружка "{course.name}".', 'success')
     return redirect(url_for('circle_admin_students', course_id=course_id))
 
-# Демо-админ при каждой загрузке приложения (в т.ч. gunicorn): admin / admin123
-with app.app_context():
-    db.create_all()
-    ensure_default_admin()
-
 if __name__ == '__main__':
+    with app.app_context():
+        db.create_all()
+        ensure_default_admin()
     host = os.environ.get('APP_HOST', '0.0.0.0')
     port = int(os.environ.get('APP_PORT', '5000'))
     debug = os.environ.get('FLASK_DEBUG', '1') == '1'

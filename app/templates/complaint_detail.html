@@ -1,0 +1,169 @@
+{% extends "base.html" %}
+
+{% block title %}Жалоба #{{ complaint.id }}{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-lg-8">
+        <!-- Информация о жалобе -->
+        <div class="card mb-4">
+            <div class="card-header">
+                <div class="d-flex justify-content-between align-items-center">
+                    <h4 class="mb-0"># {{ complaint.id }} — {{ complaint.title }}</h4>
+                    {% if complaint.status == 'open' %}
+                        <span class="badge bg-danger"><i class="fas fa-exclamation"></i> Открытая</span>
+                    {% elif complaint.status == 'in_review' %}
+                        <span class="badge bg-warning"><i class="fas fa-hourglass"></i> На рассмотрении</span>
+                    {% elif complaint.status == 'resolved' %}
+                        <span class="badge bg-info"><i class="fas fa-check"></i> Решена</span>
+                    {% elif complaint.status == 'closed' %}
+                        <span class="badge bg-secondary"><i class="fas fa-times-circle"></i> Закрыта</span>
+                    {% endif %}
+                </div>
+            </div>
+            <div class="card-body">
+                <!-- Метаинформация -->
+                <div class="row mb-3">
+                    <div class="col-md-6">
+                        <p class="mb-2">
+                            <strong><i class="fas fa-circle-notch"></i> На кружок:</strong><br>
+                            <a href="/course/{{ complaint.course.id }}">{{ complaint.course.name }}</a>
+                        </p>
+                    </div>
+                    <div class="col-md-6">
+                        <p class="mb-2">
+                            <strong><i class="fas fa-calendar"></i> Дата:</strong><br>
+                            {{ complaint.created_at.strftime('%d.%m.%Y %H:%M') }}
+                        </p>
+                    </div>
+                </div>
+
+                <!-- Описание жалобы -->
+                <hr>
+                <h6><strong>Ваша жалоба:</strong></h6>
+                <div class="alert alert-light border">
+                    <p style="line-height: 1.6;">{{ complaint.description }}</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Ответ администратора -->
+        {% if complaint.admin_response %}
+        <div class="card mb-4 border-success">
+            <div class="card-header bg-success bg-opacity-10">
+                <h6 class="mb-0"><i class="fas fa-reply"></i> Ответ администратора</h6>
+            </div>
+            <div class="card-body">
+                <p style="line-height: 1.6;">{{ complaint.admin_response }}</p>
+                
+                <hr class="my-3">
+                
+                <div class="row">
+                    <div class="col-md-6">
+                        <small class="text-muted">
+                            <i class="fas fa-calendar"></i> Получен: {{ complaint.responded_at.strftime('%d.%m.%Y %H:%M') }}
+                        </small>
+                    </div>
+                    <div class="col-md-6 text-end">
+                        <small class="text-muted">
+                            Дней на ответ: <strong>{{ (complaint.responded_at.date() - complaint.created_at.date()).days }}</strong>
+                        </small>
+                    </div>
+                </div>
+
+                <!-- Статус жалобы -->
+                <div class="mt-3 pt-3 border-top">
+                    <strong>Статус жалобы:</strong>
+                    {% if complaint.status == 'resolved' %}
+                        <div class="alert alert-info alert-sm mt-2 mb-0">
+                            <i class="fas fa-check-circle"></i> Ваша жалоба решена. Если у вас остались вопросы, свяжитесь с администратором.
+                        </div>
+                    {% elif complaint.status == 'closed' %}
+                        <div class="alert alert-secondary alert-sm mt-2 mb-0">
+                            <i class="fas fa-times-circle"></i> Жалоба закрыта.
+                        </div>
+                    {% else %}
+                        <div class="alert alert-warning alert-sm mt-2 mb-0">
+                            <i class="fas fa-hourglass"></i> Жалоба все еще находится на рассмотрении.
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+        {% else %}
+        <div class="card border-warning">
+            <div class="card-header bg-warning bg-opacity-10">
+                <h6 class="mb-0"><i class="fas fa-hourglass"></i> Ответа еще нет</h6>
+            </div>
+            <div class="card-body">
+                <p class="mb-0 text-muted">
+                    Ваша жалоба рассматривается администраторами. 
+                    Обычно ответ приходит в течение 3-5 дней. 
+                    Спасибо за терпение!
+                </p>
+            </div>
+        </div>
+        {% endif %}
+
+        <!-- Кнопка возврата -->
+        <div class="mt-4">
+            <a href="/my/complaints" class="btn btn-secondary">
+                <i class="fas fa-arrow-left"></i> К моим жалобам
+            </a>
+        </div>
+    </div>
+
+    <!-- Боковая панель -->
+    <div class="col-lg-4">
+        <div class="card sticky-top" style="top: 80px;">
+            <div class="card-header">
+                <h6 class="mb-0"><i class="fas fa-info-circle"></i> Информация</h6>
+            </div>
+            <div class="card-body">
+                <div class="mb-3">
+                    <strong>Кружок</strong><br>
+                    <small class="text-muted d-block">
+                        <a href="/course/{{ complaint.course.id }}" class="text-decoration-none">
+                            {{ complaint.course.name }}
+                        </a>
+                    </small>
+                    <small class="text-muted d-block">Категория: {{ complaint.course.category }}</small>
+                    <small class="text-muted d-block">Преподаватель: {{ complaint.course.instructor }}</small>
+                </div>
+
+                <hr>
+
+                <div class="mb-3">
+                    <strong>Номер жалобы</strong><br>
+                    <small class="text-muted d-block">#{{ complaint.id }}</small>
+                </div>
+
+                <div class="mb-3">
+                    <strong>Статус</strong><br>
+                    {% if complaint.status == 'open' %}
+                        <span class="badge bg-danger">Открытая</span>
+                    {% elif complaint.status == 'in_review' %}
+                        <span class="badge bg-warning">На рассмотрении</span>
+                    {% elif complaint.status == 'resolved' %}
+                        <span class="badge bg-info">Решена</span>
+                    {% elif complaint.status == 'closed' %}
+                        <span class="badge bg-secondary">Закрыта</span>
+                    {% endif %}
+                </div>
+
+                <hr>
+
+                <div style="background: var(--vtk-bg); padding: 12px; border-radius: 8px;">
+                    <strong style="font-size: 0.9rem;">Как мы рассматриваем жалобы:</strong>
+                    <ul style="font-size: 0.85rem; margin-top: 8px; padding-left: 18px; margin-bottom: 0;">
+                        <li>Проверяем факты и обстоятельства</li>
+                        <li>Связываемся с преподавателем</li>
+                        <li>Принимаем объективное решение</li>
+                        <li>Сообщаем результат заявителю</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

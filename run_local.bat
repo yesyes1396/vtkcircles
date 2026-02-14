@@ -10,16 +10,16 @@ if not exist "requirements.txt" (
 
 if not exist ".venv\Scripts\python.exe" (
     echo Creating virtual environment .venv ...
-    py -3.11 -m venv .venv
+    py -m venv .venv
     if errorlevel 1 (
-        echo [ERROR] Failed to create venv. Ensure Python 3.11 is installed.
+        echo [ERROR] Failed to create venv. Ensure Python is installed.
         pause
         exit /b 1
     )
 )
 
 echo Installing/updating dependencies...
-".venv\Scripts\python.exe" -m pip install --upgrade pip >nul
+".venv\Scripts\python.exe" -m pip install --upgrade pip
 ".venv\Scripts\python.exe" -m pip install -r requirements.txt
 if errorlevel 1 (
     echo [ERROR] Failed to install requirements.

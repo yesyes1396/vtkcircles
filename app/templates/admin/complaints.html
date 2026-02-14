@@ -1,0 +1,110 @@
+{% extends "base.html" %}
+
+{% block title %}Жалобы — Админ{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-12">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <h1><i class="fas fa-exclamation-circle"></i> Жалобы</h1>
+            <a href="/admin/dashboard" class="btn btn-secondary"><i class="fas fa-arrow-left"></i> Назад</a>
+        </div>
+
+        <!-- Фильтр по статусу -->
+        <div class="card mb-4">
+            <div class="card-body">
+                <div class="d-flex gap-2 flex-wrap">
+                    <a href="/admin/complaints" class="btn {% if not current_status %}btn-primary{% else %}btn-outline-primary{% endif %}">
+                        <i class="fas fa-inbox"></i> Все
+                    </a>
+                    <a href="/admin/complaints?status=open" class="btn {% if current_status == 'open' %}btn-primary{% else %}btn-outline-primary{% endif %}">
+                        <i class="fas fa-envelope-open"></i> Открытые
+                    </a>
+                    <a href="/admin/complaints?status=in_review" class="btn {% if current_status == 'in_review' %}btn-primary{% else %}btn-outline-primary{% endif %}">
+                        <i class="fas fa-eye"></i> На рассмотрении
+                    </a>
+                    <a href="/admin/complaints?status=resolved" class="btn {% if current_status == 'resolved' %}btn-primary{% else %}btn-outline-primary{% endif %}">
+                        <i class="fas fa-check"></i> Решены
+                    </a>
+                    <a href="/admin/complaints?status=closed" class="btn {% if current_status == 'closed' %}btn-primary{% else %}btn-outline-primary{% endif %}">
+                        <i class="fas fa-times-circle"></i> Закрыты
+                    </a>
+                </div>
+            </div>
+        </div>
+
+        <!-- Список жалоб -->
+        {% if complaints.items %}
+        <div class="list-group">
+            {% for complaint in complaints.items %}
+            <div class="list-group-item">
+                <div class="d-flex justify-content-between align-items-start mb-2">
+                    <div>
+                        <h6 class="mb-1">
+                            <a href="/admin/complaints/{{ complaint.id }}">{{ complaint.title }}</a>
+                        </h6>
+                        <small class="text-muted d-block">
+                            <i class="fas fa-user"></i> От: <strong>{{ complaint.user.username }}</strong> • 
+                            <i class="fas fa-circle-notch"></i> На: <strong>{{ complaint.course.name }}</strong>
+                        </small>
+                        <small class="text-muted d-block">
+                            <i class="fas fa-calendar"></i> {{ complaint.created_at.strftime('%d.%m.%Y %H:%M') }}
+                        </small>
+                    </div>
+                    <div class="text-end">
+                        {% if complaint.status == 'open' %}
+                            <span class="badge bg-danger mb-2"><i class="fas fa-exclamation"></i> Открытая</span>
+                        {% elif complaint.status == 'in_review' %}
+                            <span class="badge bg-warning mb-2"><i class="fas fa-hourglass"></i> На рассмотрении</span>
+                        {% elif complaint.status == 'resolved' %}
+                            <span class="badge bg-info mb-2"><i class="fas fa-check"></i> Решена</span>
+                        {% elif complaint.status == 'closed' %}
+                            <span class="badge bg-secondary mb-2"><i class="fas fa-times-circle"></i> Закрыта</span>
+                        {% endif %}
+                        <br>
+                        <a href="/admin/complaints/{{ complaint.id }}" class="btn btn-sm btn-outline-primary">
+                            <i class="fas fa-arrow-right"></i> Подробнее
+                        </a>
+                    </div>
+                </div>
+                <p class="mb-0 text-muted">{{ complaint.description[:150] }}{% if complaint.description | length > 150 %}...{% endif %}</p>
+            </div>
+            {% endfor %}
+        </div>
+
+        <!-- Пагинация -->
+        {% if complaints.pages > 1 %}
+        <nav class="mt-4">
+            <ul class="pagination justify-content-center">
+                {% if complaints.has_prev %}
+                    <li class="page-item"><a class="page-link" href="?page=1&status={{ current_status }}">«</a></li>
+                    <li class="page-item"><a class="page-link" href="?page={{ complaints.prev_num }}&status={{ current_status }}">‹</a></li>
+                {% endif %}
+                
+                {% for page_num in complaints.iter_pages() %}
+                    {% if page_num %}
+                        {% if page_num == complaints.page %}
+                            <li class="page-item active"><span class="page-link">{{ page_num }}</span></li>
+                        {% else %}
+                            <li class="page-item"><a class="page-link" href="?page={{ page_num }}&status={{ current_status }}">{{ page_num }}</a></li>
+                        {% endif %}
+                    {% endif %}
+                {% endfor %}
+                
+                {% if complaints.has_next %}
+                    <li class="page-item"><a class="page-link" href="?page={{ complaints.next_num }}&status={{ current_status }}">›</a></li>
+                    <li class="page-item"><a class="page-link" href="?page={{ complaints.pages }}&status={{ current_status }}">»</a></li>
+                {% endif %}
+            </ul>
+        </nav>
+        {% endif %}
+        {% else %}
+        <div class="text-center py-5 text-muted">
+            <i class="fas fa-check-circle" style="font-size: 3rem; opacity: 0.5;"></i><br><br>
+            <h5>Жалоб не найдено</h5>
+            <p>Нет жалоб с выбранным статусом</p>
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

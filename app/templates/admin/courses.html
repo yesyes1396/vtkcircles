@@ -1,0 +1,106 @@
+{% extends "base.html" %}
+
+{% block title %}Кружки — Админ{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-12">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <h1><i class="fas fa-circle-notch"></i> Управление кружками</h1>
+            <a href="/admin/dashboard" class="btn btn-secondary"><i class="fas fa-arrow-left"></i> Назад</a>
+        </div>
+
+        <!-- Поиск -->
+        <div class="card mb-4">
+            <div class="card-body">
+                <form method="get" class="d-flex gap-2">
+                    <input type="text" name="search" class="form-control" placeholder="Поиск по названию, категории..." value="{{ search }}">
+                    <button type="submit" class="btn btn-primary"><i class="fas fa-search"></i> Найти</button>
+                    {% if search %}
+                        <a href="/admin/courses" class="btn btn-secondary"><i class="fas fa-times"></i> Сбросить</a>
+                    {% endif %}
+                </form>
+            </div>
+        </div>
+
+        <!-- Таблица кружков -->
+        <div class="table-responsive">
+            <table class="table">
+                <thead>
+                    <tr>
+                        <th>Название</th>
+                        <th>Категория</th>
+                        <th>Преподаватель</th>
+                        <th>Студентов</th>
+                        <th>График</th>
+                        <th>Действия</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% if courses.items %}
+                        {% for course in courses.items %}
+                        <tr>
+                            <td>
+                                <strong>{{ course.name }}</strong><br>
+                                <small class="text-muted">Возраст: {{ course.min_age }}-{{ course.max_age }} лет</small>
+                            </td>
+                            <td>
+                                <span class="badge bg-primary">{{ course.category }}</span>
+                            </td>
+                            <td>{{ course.instructor or 'N/A' }}</td>
+                            <td>
+                                <span class="badge {% if course.is_full %}bg-danger{% else %}bg-success{% endif %}">
+                                    {{ course.enrollment_count }}/{{ course.max_students }}
+                                </span>
+                            </td>
+                            <td><small>{{ course.schedule or 'N/A' }}</small></td>
+                            <td>
+                                <div class="btn-group btn-group-sm">
+                                    <a href="/course/{{ course.id }}" class="btn btn-outline-secondary">
+                                        <i class="fas fa-eye"></i> Просмотр
+                                    </a>
+                                </div>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    {% else %}
+                        <tr>
+                            <td colspan="6" class="text-center py-5 text-muted">
+                                <i class="fas fa-inbox" style="font-size: 2rem; opacity: 0.5;"></i><br><br>
+                                Кружки не найдены
+                            </td>
+                        </tr>
+                    {% endif %}
+                </tbody>
+            </table>
+        </div>
+
+        <!-- Пагинация -->
+        {% if courses.pages > 1 %}
+        <nav class="mt-4">
+            <ul class="pagination justify-content-center">
+                {% if courses.has_prev %}
+                    <li class="page-item"><a class="page-link" href="?page=1&search={{ search }}">«</a></li>
+                    <li class="page-item"><a class="page-link" href="?page={{ courses.prev_num }}&search={{ search }}">‹</a></li>
+                {% endif %}
+                
+                {% for page_num in courses.iter_pages() %}
+                    {% if page_num %}
+                        {% if page_num == courses.page %}
+                            <li class="page-item active"><span class="page-link">{{ page_num }}</span></li>
+                        {% else %}
+                            <li class="page-item"><a class="page-link" href="?page={{ page_num }}&search={{ search }}">{{ page_num }}</a></li>
+                        {% endif %}
+                    {% endif %}
+                {% endfor %}
+                
+                {% if courses.has_next %}
+                    <li class="page-item"><a class="page-link" href="?page={{ courses.next_num }}&search={{ search }}">›</a></li>
+                    <li class="page-item"><a class="page-link" href="?page={{ courses.pages }}&search={{ search }}">»</a></li>
+                {% endif %}
+            </ul>
+        </nav>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}
