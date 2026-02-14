@@ -17,8 +17,8 @@ COPY . .
 ENV FLASK_APP=app/app.py
 ENV PYTHONUNBUFFERED=1
 
-# Инициализируем БД и запускаем приложение
-RUN cd app && python -c "from app import app, db; app.app_context().push(); db.create_all()"
+# Инициализируем БД из корня проекта (app — пакет)
+RUN python -c "from app.app import app; from app.models import db; app.app_context().push(); db.create_all()"
 
 # Обнажаем порт
 EXPOSE 5000
