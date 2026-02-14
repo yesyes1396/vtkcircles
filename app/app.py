@@ -1,7 +1,11 @@
 import os
 from flask import Flask, render_template, request, redirect, url_for, flash, jsonify, session, send_from_directory
 from flask_login import LoginManager, login_user, logout_user, login_required, current_user
-from models import db, User, Course, enrollment, Review, Complaint
+try:
+    from .models import db, User, Course, enrollment, Review, Complaint
+except ImportError:
+    # Fallback для запуска app.py как standalone-скрипта
+    from models import db, User, Course, enrollment, Review, Complaint
 from datetime import datetime, timedelta, date
 from functools import wraps
 from werkzeug.utils import secure_filename
@@ -1526,10 +1530,12 @@ def circle_admin_remove_student(course_id, student_id):
     flash(f'Студент {student.username} удален из кружка "{course.name}".', 'success')
     return redirect(url_for('circle_admin_students', course_id=course_id))
 
+# Демо-админ при каждой загрузке приложения (в т.ч. gunicorn): admin / admin123
+with app.app_context():
+    db.create_all()
+    ensure_default_admin()
+
 if __name__ == '__main__':
-    with app.app_context():
-        db.create_all()
-        ensure_default_admin()
     host = os.environ.get('APP_HOST', '0.0.0.0')
     port = int(os.environ.get('APP_PORT', '5000'))
     debug = os.environ.get('FLASK_DEBUG', '1') == '1'
