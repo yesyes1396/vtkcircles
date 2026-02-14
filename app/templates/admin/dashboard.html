@@ -111,7 +111,7 @@
                             {% if u.id != current_user.id %}
                             <tr>
                                 <td>{{ avatar(u, 'sm') }}</td>
-                                <td><strong>{{ u.username }}</strong><br><small class="text-muted">{{ u.email }}</small></td>
+                                <td><a href="{{ url_for('user_public_profile', user_id=u.id) }}"><strong>{{ u.username }}</strong></a><br><small class="text-muted">{{ u.email }}</small></td>
                                 <td>
                                     {% if u.is_admin %}<span class="badge bg-danger">Админ</span>
                                     {% elif u.user_type == 'circle_admin' %}<span class="badge bg-warning text-dark">Админ кружка</span>

@@ -67,10 +67,14 @@ a:hover{color:var(--vtk-primary-d);}
 .btn-icon-toggle:hover{background:rgba(255,255,255,.25);color:#fff;}
 
 /* ---------- Dropdown menu ---------- */
-.dropdown-menu-dark{background:var(--vtk-nav-bg);border:1px solid rgba(255,255,255,.1);}
+.dropdown-menu-dark{background:var(--vtk-nav-bg);border:1px solid rgba(255,255,255,.1);z-index:1060;}
 .dropdown-item{color:rgba(255,255,255,.88)!important;transition:.15s;}
 .dropdown-item:hover,.dropdown-item.active{background:rgba(255,255,255,.15)!important;color:#fff!important;}
 .dropdown-toggle::after{border-color:#fff;}
+
+/* Ensure navbar dropdowns stay above sticky sidebar cards */
+.navbar{z-index:1050;}
+.sticky-top{z-index:1020;}
 
 /* ---------- Cards ---------- */
 .card{

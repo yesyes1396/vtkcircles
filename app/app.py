@@ -480,6 +480,39 @@ def profile():
     user = current_user
     return render_template('profile.html', user=user)
 
+# ==================== Переключение видимости кружков ====================
+@app.route('/profile/toggle-courses-visibility', methods=['POST'])
+@login_required
+def toggle_courses_visibility():
+    """Переключить видимость кружков в публичном профиле"""
+    current_user.hide_courses = not current_user.hide_courses
+    db.session.commit()
+    if current_user.hide_courses:
+        flash('Ваши записи на кружки теперь скрыты от других.', 'info')
+    else:
+        flash('Ваши записи на кружки теперь видны в вашем публичном профиле.', 'success')
+    return redirect(url_for('profile'))
+
+# ==================== Публичный профиль пользователя ====================
+@app.route('/user/<int:user_id>')
+def user_public_profile(user_id):
+    """Публичный профиль пользователя (доступен всем)"""
+    user = User.query.get_or_404(user_id)
+    
+    # Определить, может ли зритель видеть кружки
+    show_courses = False
+    if current_user.is_authenticated and current_user.is_admin:
+        show_courses = True  # Админ видит всё
+    elif current_user.is_authenticated and current_user.id == user.id:
+        show_courses = True  # Свой профиль
+    elif not user.hide_courses:
+        show_courses = True  # Пользователь разрешил показ
+    
+    courses = list(user.courses) if show_courses else []
+    reviews = Review.query.filter_by(user_id=user.id).order_by(Review.created_at.desc()).all() if show_courses else []
+    
+    return render_template('user_profile.html', user=user, courses=courses, reviews=reviews, show_courses=show_courses)
+
 # ==================== Регистрация ====================
 @app.route('/register', methods=['GET', 'POST'])
 def register():

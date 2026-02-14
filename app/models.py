@@ -30,6 +30,7 @@ class User(UserMixin, db.Model):
     is_verified = db.Column(db.Boolean, default=False)  # Верификация email
     is_approved = db.Column(db.Boolean, default=False)  # Для администраторов кружков требуется одобрение
     is_blocked = db.Column(db.Boolean, default=False)  # Блокировка пользователя
+    hide_courses = db.Column(db.Boolean, default=False)  # Скрыть записи от публичного профиля
     verification_token = db.Column(db.String(255))  # Токен верификации email
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     
