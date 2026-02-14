@@ -1352,10 +1352,12 @@ def circle_admin_remove_student(course_id, student_id):
     flash(f'Студент {student.username} удален из кружка "{course.name}".', 'success')
     return redirect(url_for('circle_admin_students', course_id=course_id))
 
+# Демо-админ при каждой загрузке приложения (в т.ч. gunicorn): admin / admin123
+with app.app_context():
+    db.create_all()
+    ensure_default_admin()
+
 if __name__ == '__main__':
-    with app.app_context():
-        db.create_all()
-        ensure_default_admin()
     host = os.environ.get('APP_HOST', '0.0.0.0')
     port = int(os.environ.get('APP_PORT', '5000'))
     debug = os.environ.get('FLASK_DEBUG', '1') == '1'
