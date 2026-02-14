@@ -1,7 +1,7 @@
 import os
 from flask import Flask, render_template, request, redirect, url_for, flash, jsonify, session, send_from_directory
 from flask_login import LoginManager, login_user, logout_user, login_required, current_user
-from models import db, User, Course, enrollment, Review
+from .models import db, User, Course, enrollment, Review
 from datetime import datetime, timedelta, date
 from functools import wraps
 from werkzeug.utils import secure_filename
