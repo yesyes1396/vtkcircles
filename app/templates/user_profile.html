@@ -1,0 +1,149 @@
+{% extends "base.html" %}
+{% from "_macros.html" import avatar %}
+{% block title %}{{ user.username }} — Профиль{% endblock %}
+
+{% block content %}
+<nav aria-label="breadcrumb" class="mb-3">
+    <ol class="breadcrumb">
+        <li class="breadcrumb-item"><a href="/">Главная</a></li>
+        {% if current_user.is_authenticated and current_user.is_admin %}
+            <li class="breadcrumb-item"><a href="/admin/users">Пользователи</a></li>
+        {% endif %}
+        <li class="breadcrumb-item active">{{ user.username }}</li>
+    </ol>
+</nav>
+
+<div class="profile-header text-center">
+    <h1>{{ avatar(user, 'lg') }} {{ user.first_name or '' }} {{ user.last_name or '' }}</h1>
+    <p class="lead mb-0">@{{ user.username }}</p>
+</div>
+
+<div class="row g-4">
+    <!-- Info card -->
+    <div class="col-lg-4">
+        <div class="card h-100">
+            <div class="card-body text-center">
+                <div class="mb-3">
+                    {% if user.avatar %}
+                        <img src="/{{ user.avatar }}" class="avatar-lg">
+                    {% else %}
+                        <div class="avatar-lg avatar-initials mx-auto" style="width:100px;height:100px;font-size:1.8rem;">{{ user.initials }}</div>
+                    {% endif %}
+                </div>
+                <h5 class="mb-1">{{ user.first_name or '' }} {{ user.last_name or '' }}</h5>
+                <p class="text-muted mb-3">@{{ user.username }}</p>
+
+                {% if user.is_admin %}
+                    <span class="badge bg-danger mb-2"><i class="fas fa-crown"></i> Администратор</span>
+                {% elif user.user_type == 'circle_admin' %}
+                    <span class="badge bg-warning text-dark mb-2"><i class="fas fa-chalkboard-teacher"></i> Админ кружка</span>
+                {% else %}
+                    <span class="badge bg-info mb-2"><i class="fas fa-user"></i> Студент</span>
+                {% endif %}
+
+                {% if user.is_blocked %}
+                    <br><span class="badge bg-danger"><i class="fas fa-ban"></i> Заблокирован</span>
+                {% endif %}
+
+                <hr>
+
+                <div class="text-start">
+                    {% if current_user.is_authenticated and current_user.is_admin %}
+                        <div class="profile-info"><strong>Email</strong><br>{{ user.email }}</div>
+                        {% if user.phone %}
+                            <div class="profile-info"><strong>Телефон</strong><br><a href="tel:{{ user.phone }}">{{ user.phone }}</a></div>
+                        {% endif %}
+                    {% endif %}
+
+                    {% if user.age %}
+                        <div class="profile-info"><strong>Возраст</strong><br>{{ user.age }} лет</div>
+                    {% endif %}
+
+                    <div class="profile-info"><strong>На сайте с</strong><br>{{ user.created_at.strftime('%d.%m.%Y') }}</div>
+
+                    {% if show_courses %}
+                        <div class="profile-info"><strong>Записей на кружки</strong><br>{{ courses|length }}</div>
+                    {% endif %}
+                </div>
+
+                {# Админские действия #}
+                {% if current_user.is_authenticated and current_user.is_admin and not user.is_admin and user.id != current_user.id %}
+                <hr>
+                <div class="d-grid gap-2">
+                    {% if user.is_blocked %}
+                        <form method="POST" action="{{ url_for('admin_unblock_user', user_id=user.id) }}">
+                            <input type="hidden" name="_csrf_token" value="{{ csrf_token() }}">
+                            <button class="btn btn-outline-success btn-sm w-100"><i class="fas fa-unlock"></i> Разблокировать</button>
+                        </form>
+                    {% else %}
+                        <form method="POST" action="{{ url_for('admin_block_user', user_id=user.id) }}" onsubmit="return confirm('Заблокировать пользователя?');">
+                            <input type="hidden" name="_csrf_token" value="{{ csrf_token() }}">
+                            <button class="btn btn-outline-danger btn-sm w-100"><i class="fas fa-ban"></i> Заблокировать</button>
+                        </form>
+                    {% endif %}
+                    <form method="POST" action="{{ url_for('admin_delete_user', user_id=user.id) }}" onsubmit="return confirm('Удалить {{ user.username }}?');">
+                        <input type="hidden" name="_csrf_token" value="{{ csrf_token() }}">
+                        <button class="btn btn-outline-danger btn-sm w-100"><i class="fas fa-trash"></i> Удалить пользователя</button>
+                    </form>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    <!-- Courses & reviews -->
+    <div class="col-lg-8">
+        {% if show_courses %}
+            <h4 class="mb-3"><i class="fas fa-list"></i> Кружки</h4>
+            {% if courses %}
+                <div class="row">
+                    {% for course in courses %}
+                    <div class="col-12 col-md-6 mb-3">
+                        <div class="card course-card">
+                            <div class="course-card-header {% if not course.image %}no-image{% endif %}" style="padding:14px;font-size:1.4rem;">
+                                {% if course.image %}
+                                    <img src="/{{ course.image }}" style="height:140px;">
+                                {% else %}
+                                    <i class="fas fa-camera-retro"></i>
+                                {% endif %}
+                            </div>
+                            <div class="course-card-body">
+                                <h6 class="course-title">{{ course.name }}</h6>
+                                <small class="text-muted">{{ course.instructor or '' }}</small>
+                                <div class="mt-2">
+                                    <a href="/course/{{ course.id }}" class="btn btn-primary btn-sm w-100">Перейти</a>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+            {% else %}
+                <div class="alert alert-info">Нет записей на кружки.</div>
+            {% endif %}
+
+            {% if reviews %}
+            <h4 class="mb-3 mt-4"><i class="fas fa-comments"></i> Отзывы</h4>
+            {% for review in reviews %}
+            <div class="review-card">
+                <div class="d-flex justify-content-between align-items-center mb-1">
+                    <a href="/course/{{ review.course_id }}"><strong>{{ review.course.name }}</strong></a>
+                    <small class="text-muted">{{ review.created_at.strftime('%d.%m.%Y') }}</small>
+                </div>
+                <div class="stars-display mb-1">
+                    {% for i in range(1, 6) %}
+                        <i class="fas fa-star {% if i <= review.rating %}filled{% endif %}"></i>
+                    {% endfor %}
+                </div>
+                {% if review.text %}<p class="mb-0 text-muted">{{ review.text }}</p>{% endif %}
+            </div>
+            {% endfor %}
+            {% endif %}
+        {% else %}
+            <div class="alert alert-secondary">
+                <i class="fas fa-lock"></i> Этот пользователь скрыл свои записи на кружки.
+            </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}
