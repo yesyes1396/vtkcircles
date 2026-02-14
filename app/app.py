@@ -639,11 +639,6 @@ def register():
             return reg_error('Укажите дату рождения.')
         try:
             birth_date = datetime.strptime(birth_date_str, '%Y-%m-%d').date()
-            # Рассчитаем возраст
-            today = date.today()
-            age = today.year - birth_date.year - ((today.month, today.day) < (birth_date.month, birth_date.day))
-            if age < 14 or age > 22:
-                return reg_error(f'Возраст должен быть от 14 до 22 лет (ваш: {age}).')
         except ValueError:
             return reg_error('Неверный формат даты рождения.')
         
@@ -904,7 +899,11 @@ def admin_add_course():
         if not name or not category:
             flash('Название и категория обязательны.', 'danger')
             return redirect(url_for('admin_add_course'))
-        
+        # Возраст для записи на кружок только 14–22
+        min_age = max(14, min(22, min_age))
+        max_age = max(14, min(22, max_age))
+        if min_age > max_age:
+            max_age = min_age
         course = Course(
             name=name,
             description=description,
@@ -955,8 +954,14 @@ def admin_edit_course(course_id):
         course.name = request.form.get('name', '').strip()
         course.description = request.form.get('description', '').strip()
         course.category = request.form.get('category', '').strip()
-        course.min_age = request.form.get('min_age', course.min_age, type=int)
-        course.max_age = request.form.get('max_age', course.max_age, type=int)
+        min_age = request.form.get('min_age', course.min_age, type=int)
+        max_age = request.form.get('max_age', course.max_age, type=int)
+        min_age = max(14, min(22, min_age))
+        max_age = max(14, min(22, max_age))
+        if min_age > max_age:
+            max_age = min_age
+        course.min_age = min_age
+        course.max_age = max_age
         course.max_students = request.form.get('max_students', course.max_students, type=int)
         course.schedule = request.form.get('schedule', '').strip()
         course.address = request.form.get('address', '').strip()
@@ -1401,7 +1406,10 @@ def circle_admin_create_course():
         if not name or not category:
             flash('Название и категория обязательны.', 'danger')
             return redirect(url_for('circle_admin_create_course'))
-        
+        min_age = max(14, min(22, min_age))
+        max_age = max(14, min(22, max_age))
+        if min_age > max_age:
+            max_age = min_age
         instructor_name = f"{current_user.first_name or ''} {current_user.last_name or ''}".strip()
         course = Course(
             name=name,
@@ -1496,8 +1504,14 @@ def circle_admin_edit_course(course_id):
         course.name = request.form.get('name', '').strip()
         course.description = request.form.get('description', '').strip()
         course.category = request.form.get('category', '').strip()
-        course.min_age = request.form.get('min_age', 14, type=int)
-        course.max_age = request.form.get('max_age', 22, type=int)
+        min_age = request.form.get('min_age', 14, type=int)
+        max_age = request.form.get('max_age', 22, type=int)
+        min_age = max(14, min(22, min_age))
+        max_age = max(14, min(22, max_age))
+        if min_age > max_age:
+            max_age = min_age
+        course.min_age = min_age
+        course.max_age = max_age
         course.max_students = request.form.get('max_students', 20, type=int)
         course.schedule = request.form.get('schedule', '').strip()
         course.address = request.form.get('address', '').strip()
