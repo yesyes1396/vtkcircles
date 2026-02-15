@@ -67,9 +67,14 @@ a:hover{color:var(--vtk-primary-d);}
 .btn-icon-toggle:hover{background:rgba(255,255,255,.25);color:#fff;}
 /* Кнопка настроек (выпадающее меню) в навбаре */
 /* Кнопка настроек без стрелки, с индикатором уведомлений */
-.navbar .navbar-settings-btn{padding:0;border:none;background:rgba(255,255,255,.15);color:#fff;border-radius:50%;width:34px;height:34px;transition:.2s;}
+.navbar .navbar-settings-btn{padding:0.35rem 0.6rem;border:none;background:rgba(255,255,255,.15);color:#fff;border-radius:999px;transition:.2s;}
 .navbar .navbar-settings-btn:hover{background:rgba(255,255,255,.25);color:#fff;}
 .navbar .navbar-settings-btn::after{display:none;}
+.navbar .navbar-settings-label{white-space:nowrap;}
+@media (min-width: 992px){
+    .navbar .navbar-settings-label{display:none;}
+    .navbar .navbar-settings-btn{padding:0;width:34px;height:34px;border-radius:50%;justify-content:center;}
+}
 .navbar .dropdown .dropdown-menu{min-width:220px;}
 /* На мобильной: кнопка настроек в потоке после пунктов меню (не уезжает вправо и не смещается при открытии) */
 @media (max-width: 991.98px){

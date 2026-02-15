@@ -86,8 +86,10 @@ class Course(db.Model):
     icon = db.Column(db.String(50), default='dumbbell')  # FontAwesome icon name
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    created_by_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=True)  # Кто создал (главный админ в админке)
     
     # Связь с пользователями (определена выше через enrollment)
+    created_by = db.relationship('User', backref=db.backref('created_courses', lazy='dynamic'), foreign_keys=[created_by_id])
     
     @property
     def available_slots(self):

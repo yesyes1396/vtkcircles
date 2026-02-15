@@ -417,15 +417,25 @@ def add_review(course_id):
         is_new = True
 
     db.session.commit()
-    if is_new and course.instructor:
-        for u in User.query.filter_by(user_type='circle_admin').all():
-            iname = f"{u.first_name or ''} {u.last_name or ''}".strip() or u.username
-            if iname == course.instructor:
-                notify(u.id, 'new_review',
+    if is_new:
+        notified_review = set()
+        if course.instructor:
+            for u in User.query.filter_by(user_type='circle_admin').all():
+                iname = f"{u.first_name or ''} {u.last_name or ''}".strip() or u.username
+                if iname == course.instructor and u.id not in notified_review:
+                    notify(u.id, 'new_review',
+                           f'Вы получили новый отзыв о «{course.name}»',
+                           message=f'{current_user.username} оставил отзыв о кружке.',
+                           link_url=url_for('course_detail', course_id=course_id))
+                    notified_review.add(u.id)
+                    break
+        if getattr(course, 'created_by_id', None) and course.created_by_id not in notified_review:
+            creator = User.query.get(course.created_by_id)
+            if creator and creator.is_admin:
+                notify(creator.id, 'new_review',
                        f'Вы получили новый отзыв о «{course.name}»',
                        message=f'{current_user.username} оставил отзыв о кружке.',
                        link_url=url_for('course_detail', course_id=course_id))
-                break
     flash('Ваш отзыв сохранён!', 'success')
     return redirect(url_for('course_detail', course_id=course_id))
 
@@ -508,15 +518,24 @@ def enroll_course(course_id):
            f'Ваш статус в «{course.name}» — на ожидании',
            message='Заявка отправлена на рассмотрение администратору кружка.',
            link_url=url_for('course_detail', course_id=course_id))
-    # Уведомить админа кружка (препода)
+    # Уведомить админа кружка (препода по instructor) и/или создателя кружка (главного админа по created_by_id)
+    notified_ids = set()
     for u in User.query.filter_by(user_type='circle_admin').all():
         iname = f"{u.first_name or ''} {u.last_name or ''}".strip() or u.username
-        if iname == course.instructor:
+        if iname == course.instructor and u.id not in notified_ids:
             notify(u.id, 'new_application',
                    f'Новая заявка на запись в «{course.name}»',
                    message=f'{current_user.username} подал заявку на запись.',
                    link_url=url_for('course_enrollments', course_id=course_id))
+            notified_ids.add(u.id)
             break
+    if getattr(course, 'created_by_id', None) and course.created_by_id not in notified_ids:
+        creator = User.query.get(course.created_by_id)
+        if creator and creator.is_admin:
+            notify(creator.id, 'new_application',
+                   f'Новая заявка на запись в «{course.name}»',
+                   message=f'{current_user.username} подал заявку на запись.',
+                   link_url=url_for('course_enrollments', course_id=course_id))
     flash('Заявка отправлена! Администратор кружка скоро её рассмотрит.', 'success')
     return redirect(url_for('course_detail', course_id=course_id))
 
@@ -595,9 +614,15 @@ def profile():
         user.hide_courses = False
         db.session.commit()
     if user.user_type == 'circle_admin' or user.is_admin:
-        # Админ кружка и главный админ видят секции по полю «преподаватель» (главный админ может создавать кружки за себя и за других)
+        # Админ кружка: секции по полю «преподаватель». Главный админ: по преподавателю ИЛИ созданные им (created_by_id)
         iname = f"{user.first_name or ''} {user.last_name or ''}".strip() or user.username
-        profile_courses = Course.query.filter(Course.instructor == iname).all()
+        if user.is_admin:
+            from sqlalchemy import or_
+            profile_courses = Course.query.filter(
+                or_(Course.instructor == iname, Course.created_by_id == user.id)
+            ).all()
+        else:
+            profile_courses = Course.query.filter(Course.instructor == iname).all()
         profile_courses_are_led = True
     else:
         profile_courses = list(user.courses)
@@ -668,7 +693,13 @@ def user_public_profile(user_id):
     profile_show_led_courses = False
     if user.user_type == 'circle_admin' or user.is_admin:
         iname = f"{user.first_name or ''} {user.last_name or ''}".strip() or user.username
-        courses = list(Course.query.filter(Course.instructor == iname).all())
+        if user.is_admin:
+            from sqlalchemy import or_
+            courses = list(Course.query.filter(
+                or_(Course.instructor == iname, Course.created_by_id == user.id)
+            ).all())
+        else:
+            courses = list(Course.query.filter(Course.instructor == iname).all())
         show_courses = True
         profile_show_led_courses = True
     else:
@@ -1029,7 +1060,8 @@ def admin_add_course():
             address=address,
             phone=phone,
             instructor=instructor,
-            icon=icon
+            icon=icon,
+            created_by_id=current_user.id
         )
         db.session.add(course)
         db.session.flush()
@@ -1831,7 +1863,26 @@ def reject_enrollment(request_id):
 # Демо-админ при каждой загрузке приложения (в т.ч. gunicorn): admin / admin123
 with app.app_context():
     db.create_all()
+    # Добавить колонку created_by_id в course для существующих БД (SQLite)
+    try:
+        from sqlalchemy import text
+        bind = db.session.get_bind()
+        if bind.dialect.name == 'sqlite':
+            db.session.execute(text('ALTER TABLE course ADD COLUMN created_by_id INTEGER REFERENCES user(id)'))
+            db.session.commit()
+    except Exception:
+        db.session.rollback()
     ensure_default_admin()
+    # Обратная заливка: кружки без created_by_id с преподавателем VTK Admin или пустым — считать созданными главным админом
+    mainadmin = User.query.filter_by(username='mainadmin').first()
+    if mainadmin:
+        for c in Course.query.filter(Course.created_by_id.is_(None)):
+            if (c.instructor or '').strip() in ('', 'VTK Admin'):
+                c.created_by_id = mainadmin.id
+        try:
+            db.session.commit()
+        except Exception:
+            db.session.rollback()
 
 if __name__ == '__main__':
     host = os.environ.get('APP_HOST', '0.0.0.0')

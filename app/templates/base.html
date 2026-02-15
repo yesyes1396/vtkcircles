@@ -41,8 +41,9 @@
                         {% endif %}
                         <li class="nav-item ms-auto">
                             <div class="dropdown">
-                                <button class="btn btn-sm btn-icon-toggle navbar-settings-btn position-relative d-flex align-items-center justify-content-center" type="button" id="navbarSettingsDropdown" data-bs-toggle="dropdown" aria-expanded="false" title="Настройки и уведомления" data-bs-boundary="viewport" data-bs-reference="parent">
+                                <button class="btn btn-sm navbar-settings-btn position-relative d-flex align-items-center gap-1" type="button" id="navbarSettingsDropdown" data-bs-toggle="dropdown" aria-expanded="false" title="Настройки и уведомления" data-bs-boundary="viewport" data-bs-reference="parent">
                                     <i class="fas fa-cog"></i>
+                                    <span class="navbar-settings-label">Настройки</span>
                                     {% if unread_notifications_count %}<span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger">{{ unread_notifications_count }}</span>{% endif %}
                                 </button>
                                 <ul class="dropdown-menu dropdown-menu-end dropdown-menu-dark" aria-labelledby="navbarSettingsDropdown">
