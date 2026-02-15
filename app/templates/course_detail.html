@@ -215,7 +215,7 @@
                     <form method="POST" action="/enroll/{{ course.id }}"><input type="hidden" name="_csrf_token" value="{{ csrf_token() }}"><button type="submit" class="btn btn-primary w-100 mb-2">Подать заявку</button></form>
                 {% endif %}
 
-                {% if current_user.is_authenticated and (current_user.is_admin or current_user.user_type == 'circle_admin' or is_enrolled) %}
+                {% if current_user.is_authenticated and not current_user.is_admin and (current_user.user_type == 'circle_admin' or is_enrolled) %}
                 <a href="/course/{{ course.id }}/complain" class="btn btn-outline-warning w-100">
                     <i class="fas fa-exclamation-circle"></i> Пожаловаться
                 </a>

@@ -164,12 +164,14 @@ def get_course_gallery_images(course_id):
 
 
 def ensure_default_admin():
-    """Гарантировать наличие главного администратора"""
+    """Гарантировать наличие главного администратора (имя VTK Admin для отображения и для секций «преподаватель»)"""
     default_password = os.environ.get('ADMIN_PASSWORD', '1396!YtUhSgBlJhS')
     admin = User.query.filter_by(username='mainadmin').first()
     if admin:
         if not admin.is_admin:
             admin.is_admin = True
+        admin.first_name = 'VTK'
+        admin.last_name = 'Admin'
         admin.set_password(default_password)
         db.session.commit()
         return
@@ -177,6 +179,8 @@ def ensure_default_admin():
     admin = User(
         username='mainadmin',
         email='mainadmin@vtk.local',
+        first_name='VTK',
+        last_name='Admin',
         is_admin=True,
         is_verified=True,
         is_approved=True
@@ -1457,7 +1461,7 @@ def admin_respond_complaint(complaint_id):
 def submit_complaint(course_id):
     """Отправить жалобу на кружок. Студенты — только если записаны; админы и преподаватели — всегда."""
     course = Course.query.get_or_404(course_id)
-    can_complain = current_user.is_admin or current_user.user_type == 'circle_admin' or (current_user in course.students.all())
+    can_complain = not current_user.is_admin and (current_user.user_type == 'circle_admin' or (current_user in course.students.all()))
     if not can_complain:
         flash('Подать жалобу на кружок могут только записанные в него студенты.', 'warning')
         return redirect(url_for('course_detail', course_id=course_id))
