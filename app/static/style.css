@@ -66,9 +66,14 @@ a:hover{color:var(--vtk-primary-d);}
 }
 .btn-icon-toggle:hover{background:rgba(255,255,255,.25);color:#fff;}
 /* Кнопка настроек (выпадающее меню) в навбаре */
-.navbar .dropdown .btn-icon-toggle.dropdown-toggle{padding:0;}
-.navbar .dropdown .btn-icon-toggle.dropdown-toggle::after{margin-left:0;}
+/* Кнопка настроек без стрелки, с индикатором уведомлений */
+.navbar .navbar-settings-btn{padding:0;border:none;background:rgba(255,255,255,.15);color:#fff;border-radius:50%;width:34px;height:34px;transition:.2s;}
+.navbar .navbar-settings-btn:hover{background:rgba(255,255,255,.25);color:#fff;}
+.navbar .navbar-settings-btn::after{display:none;}
 .navbar .dropdown .dropdown-menu{min-width:220px;}
+/* Карточка кружка: изображение без рамки, заполняет блок */
+.course-card-header{min-height:140px;}
+.course-card-header img{display:block;width:100%;height:100%;min-height:140px;object-fit:cover;object-position:center;}
 
 /* ---------- Dropdown menu ---------- */
 .dropdown-menu-dark{background:var(--vtk-nav-bg);border:1px solid rgba(255,255,255,.1);z-index:1060;}

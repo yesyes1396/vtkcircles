@@ -462,12 +462,6 @@ def vote_review(review_id):
         db.session.add(ReviewVote(user_id=current_user.id, review_id=review_id, is_like=is_like))
 
     db.session.commit()
-    # Уведомить автора отзыва (если голосовал не он сам)
-    if review.user_id != current_user.id:
-        title = 'Кто-то посчитал ваш отзыв полезным.' if is_like else 'Кто-то посчитал ваш отзыв не полезным.'
-        notify(review.user_id, 'review_vote', title,
-               message='Перейти к отзыву',
-               link_url=url_for('course_detail', course_id=review.course_id) + '#review-' + str(review_id))
     return redirect(url_for('course_detail', course_id=review.course_id) + '#review-' + str(review_id))
 
 
@@ -476,6 +470,9 @@ def vote_review(review_id):
 @login_required
 def enroll_course(course_id):
     """Подать заявку на запись в кружок (одобряет админ кружка)"""
+    if current_user.user_type == 'circle_admin':
+        flash('Администраторы кружков не могут записываться на секции.', 'warning')
+        return redirect(url_for('course_detail', course_id=course_id))
     course = Course.query.get_or_404(course_id)
     
     # Проверка возраста
@@ -590,7 +587,14 @@ def profile():
         return redirect(url_for('profile'))
     
     user = current_user
-    return render_template('profile.html', user=user)
+    if user.user_type == 'circle_admin':
+        iname = f"{user.first_name or ''} {user.last_name or ''}".strip() or user.username
+        profile_courses = Course.query.filter(Course.instructor == iname).all()
+        profile_courses_are_led = True
+    else:
+        profile_courses = list(user.courses)
+        profile_courses_are_led = False
+    return render_template('profile.html', user=user, profile_courses=profile_courses, profile_courses_are_led=profile_courses_are_led)
 
 # ==================== Переключение видимости кружков ====================
 @app.route('/profile/toggle-courses-visibility', methods=['POST'])
@@ -1390,7 +1394,11 @@ def admin_respond_complaint(complaint_id):
     complaint.status = new_status
     complaint.responded_at = datetime.utcnow()
     db.session.commit()
-    
+    status_text = {'open': 'открыта', 'in_review': 'на рассмотрении', 'resolved': 'решена', 'closed': 'закрыта'}.get(new_status, new_status)
+    notify(complaint.user_id, 'complaint_status',
+           f'По жалобе «{complaint.title[:50]}{"…" if len(complaint.title) > 50 else ""}» дан ответ',
+           message=f'Статус: {status_text}. Перейдите к жалобе.',
+           link_url=url_for('complaint_detail', complaint_id=complaint.id))
     flash('Ответ на жалобу отправлен.', 'success')
     return redirect(url_for('admin_complaints'))
 

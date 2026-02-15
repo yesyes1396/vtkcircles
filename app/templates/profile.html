@@ -59,7 +59,7 @@
                     <div class="col-md-6"><div class="profile-info"><strong>Email</strong><br>{{ current_user.email }}</div></div>
                     <div class="col-md-6"><div class="profile-info"><strong>Дата рождения</strong><br>{% if current_user.birth_date %}{{ current_user.birth_date.strftime('%d.%m.%Y') }}{% else %}<span class="text-muted">Не указана</span>{% endif %}</div></div>
                     <div class="col-md-6"><div class="profile-info"><strong>Возраст</strong><br>{% if current_user.age %}{{ current_user.age }} лет{% else %}<span class="text-muted">—</span>{% endif %}</div></div>
-                    <div class="col-md-6"><div class="profile-info"><strong>Записей</strong><br>{{ current_user.courses|length }}</div></div>
+                    <div class="col-md-6"><div class="profile-info"><strong>{% if profile_courses_are_led %}Ведёт секций{% else %}Записей{% endif %}</strong><br>{{ profile_courses|length }}</div></div>
                 </div>
             </div>
         </div>
@@ -104,15 +104,15 @@
             </div>
         </div>
 
-        <h4 class="mb-3"><i class="fas fa-list"></i> Ваши секции</h4>
-        {% if current_user.courses|length > 0 %}
+        <h4 class="mb-3"><i class="fas fa-list"></i> {% if profile_courses_are_led %}Секции, которые вы ведёте{% else %}Ваши секции{% endif %}</h4>
+        {% if profile_courses|length > 0 %}
             <div class="row">
-                {% for course in current_user.courses %}
+                {% for course in profile_courses %}
                 <div class="col-12 col-md-6 mb-3">
                     <div class="card course-card">
-                        <div class="course-card-header {% if not course.image %}no-image{% endif %}" style="padding:14px;font-size:1.4rem;">
+                        <div class="course-card-header {% if not course.image %}no-image{% endif %}">
                             {% if course.image %}
-                                <img src="/{{ course.image }}" style="height:140px;">
+                                <img src="/{{ course.image }}" alt="">
                             {% else %}
                                 <i class="fas fa-camera-retro"></i>
                             {% endif %}
@@ -121,7 +121,11 @@
                             <h6 class="course-title">{{ course.name }}</h6>
                             <div class="d-grid gap-2 mt-2">
                                 <a href="/course/{{ course.id }}" class="btn btn-primary btn-sm">Подробнее</a>
-                                <form method="POST" action="/unenroll/{{ course.id }}"><button class="btn btn-outline-danger btn-sm w-100">Отписаться</button></form>
+                                {% if profile_courses_are_led %}
+                                    <a href="{{ url_for('course_enrollments', course_id=course.id) }}" class="btn btn-outline-primary btn-sm">Заявки</a>
+                                {% else %}
+                                    <form method="POST" action="/unenroll/{{ course.id }}"><input type="hidden" name="_csrf_token" value="{{ csrf_token() }}"><button type="submit" class="btn btn-outline-danger btn-sm w-100">Отписаться</button></form>
+                                {% endif %}
                             </div>
                         </div>
                     </div>
@@ -129,7 +133,7 @@
                 {% endfor %}
             </div>
         {% else %}
-            <div class="alert alert-info">Вы пока ни на что не записаны. <a href="/">Каталог секций</a></div>
+            <div class="alert alert-info">{% if profile_courses_are_led %}Вы пока не ведёте секций. <a href="{{ url_for('circle_admin_courses') }}">Управление кружками</a>{% else %}Вы пока ни на что не записаны. <a href="/">Каталог секций</a>{% endif %}</div>
         {% endif %}
     </div>
 </div>

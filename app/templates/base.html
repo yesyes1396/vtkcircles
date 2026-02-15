@@ -40,24 +40,12 @@
                             <li class="nav-item"><a class="nav-link" href="/circle-admin"><i class="fas fa-chalkboard-teacher"></i> Кружок</a></li>
                         {% endif %}
                         <li class="nav-item">
-                            <form method="POST" action="{{ url_for('logout') }}" class="d-inline mb-0">
-                                <input type="hidden" name="_csrf_token" value="{{ csrf_token() }}">
-                                <button type="submit" class="nav-link nav-btn-link"><i class="fas fa-sign-out-alt"></i> Выход</button>
-                            </form>
-                        </li>
-                        <li class="nav-item">
                             <div class="dropdown">
-                                <button class="btn btn-sm btn-icon-toggle dropdown-toggle d-flex align-items-center" type="button" id="navbarSettingsDropdown" data-bs-toggle="dropdown" aria-expanded="false" title="Настройки">
+                                <button class="btn btn-sm btn-icon-toggle navbar-settings-btn position-relative d-flex align-items-center justify-content-center" type="button" id="navbarSettingsDropdown" data-bs-toggle="dropdown" aria-expanded="false" title="Настройки и уведомления">
                                     <i class="fas fa-cog"></i>
+                                    {% if unread_notifications_count %}<span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger">{{ unread_notifications_count }}</span>{% endif %}
                                 </button>
                                 <ul class="dropdown-menu dropdown-menu-end dropdown-menu-dark" aria-labelledby="navbarSettingsDropdown">
-                                    <li>
-                                        <button type="button" class="dropdown-item d-flex align-items-center gap-2" id="themeToggle" title="Смена темы">
-                                            <i class="fas fa-moon" id="themeIcon"></i>
-                                            <span>Светлая / Тёмная тема</span>
-                                        </button>
-                                    </li>
-                                    <li><hr class="dropdown-divider"></li>
                                     <li>
                                         <a class="dropdown-item d-flex align-items-center gap-2" href="{{ url_for('inbox') }}" title="Уведомления">
                                             <i class="fas fa-bell"></i>
@@ -67,11 +55,28 @@
                                     </li>
                                     <li><hr class="dropdown-divider"></li>
                                     <li>
+                                        <button type="button" class="dropdown-item d-flex align-items-center gap-2 w-100 text-start" id="themeToggle" title="Смена темы">
+                                            <i class="fas fa-moon" id="themeIcon"></i>
+                                            <span>Светлая / Тёмная тема</span>
+                                        </button>
+                                    </li>
+                                    <li><hr class="dropdown-divider"></li>
+                                    <li>
                                         <span class="dropdown-item text-muted d-flex align-items-center gap-2" title="Скоро">
                                             <i class="fas fa-language"></i>
                                             <span>Язык</span>
                                             <small class="opacity-75">(скоро)</small>
                                         </span>
+                                    </li>
+                                    <li><hr class="dropdown-divider"></li>
+                                    <li>
+                                        <form method="POST" action="{{ url_for('logout') }}" class="mb-0">
+                                            <input type="hidden" name="_csrf_token" value="{{ csrf_token() }}">
+                                            <button type="submit" class="dropdown-item d-flex align-items-center gap-2 w-100 text-start border-0 bg-transparent">
+                                                <i class="fas fa-sign-out-alt"></i>
+                                                <span>Выход</span>
+                                            </button>
+                                        </form>
                                     </li>
                                 </ul>
                             </div>

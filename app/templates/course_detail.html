@@ -196,18 +196,23 @@
 
                 {% if not current_user.is_authenticated %}
                     <a href="/login" class="btn btn-primary w-100">Войти для записи</a>
+                {% elif current_user.user_type == 'circle_admin' %}
+                    <p class="text-muted small mb-2">Администраторы кружков не записываются на секции.</p>
+                    {% if can_manage %}
+                        <a href="{{ url_for('course_enrollments', course_id=course.id) }}" class="btn btn-outline-primary w-100 mb-2"><i class="fas fa-users"></i> Заявки и участники</a>
+                    {% endif %}
                 {% elif is_enrolled %}
                     <div class="alert alert-success py-2 mb-2"><i class="fas fa-check-circle"></i> Вы записаны</div>
-                    <form method="POST" action="/unenroll/{{ course.id }}"><button class="btn btn-outline-danger w-100 mb-2">Отписаться</button></form>
+                    <form method="POST" action="/unenroll/{{ course.id }}"><input type="hidden" name="_csrf_token" value="{{ csrf_token() }}"><button type="submit" class="btn btn-outline-danger w-100 mb-2">Отписаться</button></form>
                 {% elif pending_request %}
                     <div class="alert alert-warning py-2 mb-2"><i class="fas fa-clock"></i> Заявка на рассмотрении</div>
-                    <form method="POST" action="/cancel-enrollment/{{ course.id }}"><button class="btn btn-outline-secondary w-100 mb-2">Отменить заявку</button></form>
+                    <form method="POST" action="/cancel-enrollment/{{ course.id }}"><input type="hidden" name="_csrf_token" value="{{ csrf_token() }}"><button type="submit" class="btn btn-outline-secondary w-100 mb-2">Отменить заявку</button></form>
                 {% elif course.is_full %}
                     <button class="btn btn-secondary w-100 mb-2" disabled>Нет мест</button>
                 {% elif current_user.age and (current_user.age < course.min_age or current_user.age > course.max_age) %}
                     <div class="alert alert-warning py-2 mb-2">Возраст не подходит</div>
                 {% else %}
-                    <form method="POST" action="/enroll/{{ course.id }}"><button class="btn btn-primary w-100 mb-2">Подать заявку</button></form>
+                    <form method="POST" action="/enroll/{{ course.id }}"><input type="hidden" name="_csrf_token" value="{{ csrf_token() }}"><button type="submit" class="btn btn-primary w-100 mb-2">Подать заявку</button></form>
                 {% endif %}
 
                 {% if current_user.is_authenticated %}
