@@ -23,13 +23,6 @@
                     <li class="nav-item"><a class="nav-link" href="/"><i class="fas fa-home"></i> Главная</a></li>
                     {% if current_user.is_authenticated %}
                         <li class="nav-item"><a class="nav-link" href="/profile"><i class="fas fa-user-circle"></i> Кабинет</a></li>
-                        <li class="nav-item">
-                            <a class="nav-link d-flex align-items-center gap-1" href="/inbox" title="Уведомления">
-                                <i class="fas fa-bell"></i>
-                                <span>Уведомления</span>
-                                {% if unread_notifications_count %}<span class="badge bg-danger rounded-pill">{{ unread_notifications_count }}</span>{% endif %}
-                            </a>
-                        </li>
                         {% if current_user.is_admin %}
                             <li class="nav-item dropdown">
                                 <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown"><i class="fas fa-shield-alt"></i> Админ</a>
@@ -52,15 +45,41 @@
                                 <button type="submit" class="nav-link nav-btn-link"><i class="fas fa-sign-out-alt"></i> Выход</button>
                             </form>
                         </li>
+                        <li class="nav-item">
+                            <div class="dropdown">
+                                <button class="btn btn-sm btn-icon-toggle dropdown-toggle d-flex align-items-center" type="button" id="navbarSettingsDropdown" data-bs-toggle="dropdown" aria-expanded="false" title="Настройки">
+                                    <i class="fas fa-cog"></i>
+                                </button>
+                                <ul class="dropdown-menu dropdown-menu-end dropdown-menu-dark" aria-labelledby="navbarSettingsDropdown">
+                                    <li>
+                                        <button type="button" class="dropdown-item d-flex align-items-center gap-2" id="themeToggle" title="Смена темы">
+                                            <i class="fas fa-moon" id="themeIcon"></i>
+                                            <span>Светлая / Тёмная тема</span>
+                                        </button>
+                                    </li>
+                                    <li><hr class="dropdown-divider"></li>
+                                    <li>
+                                        <a class="dropdown-item d-flex align-items-center gap-2" href="{{ url_for('inbox') }}" title="Уведомления">
+                                            <i class="fas fa-bell"></i>
+                                            <span>Уведомления</span>
+                                            {% if unread_notifications_count %}<span class="badge bg-danger rounded-pill ms-1">{{ unread_notifications_count }}</span>{% endif %}
+                                        </a>
+                                    </li>
+                                    <li><hr class="dropdown-divider"></li>
+                                    <li>
+                                        <span class="dropdown-item text-muted d-flex align-items-center gap-2" title="Скоро">
+                                            <i class="fas fa-language"></i>
+                                            <span>Язык</span>
+                                            <small class="opacity-75">(скоро)</small>
+                                        </span>
+                                    </li>
+                                </ul>
+                            </div>
+                        </li>
                     {% else %}
                         <li class="nav-item"><a class="nav-link" href="/login"><i class="fas fa-sign-in-alt"></i> Вход</a></li>
                         <li class="nav-item"><a class="nav-link btn-nav-register" href="/register"><i class="fas fa-user-plus"></i> Регистрация</a></li>
                     {% endif %}
-                    <li class="nav-item ms-2">
-                        <button class="btn btn-sm btn-icon-toggle" id="themeToggle" title="Переключить тему">
-                            <i class="fas fa-moon" id="themeIcon"></i>
-                        </button>
-                    </li>
                 </ul>
             </div>
         </div>
@@ -103,21 +122,22 @@
         });
     })();
 
-    /* ---- Theme toggle ---- */
+    /* ---- Theme toggle (в выпадающем меню настроек) ---- */
     (function(){
         const html=document.documentElement;
         const icon=document.getElementById('themeIcon');
         const btn=document.getElementById('themeToggle');
+        if(!btn)return;
         const saved=localStorage.getItem('theme')||'light';
         html.setAttribute('data-bs-theme',saved);
         updateIcon(saved);
-        btn.addEventListener('click',()=>{
+        btn.addEventListener('click',function(e){e.preventDefault();
             const next=html.getAttribute('data-bs-theme')==='dark'?'light':'dark';
             html.setAttribute('data-bs-theme',next);
             localStorage.setItem('theme',next);
             updateIcon(next);
         });
-        function updateIcon(t){icon.className=t==='dark'?'fas fa-sun':'fas fa-moon';}
+        function updateIcon(t){if(icon)icon.className=t==='dark'?'fas fa-sun':'fas fa-moon';}
     })();
 
     /* ---- Image preview helper ---- */

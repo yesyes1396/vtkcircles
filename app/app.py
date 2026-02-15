@@ -106,6 +106,7 @@ def notify(user_id, kind, title, message=None, link_url=None):
         return
     n = Notification(user_id=user_id, kind=kind, title=title, message=message, link_url=link_url)
     db.session.add(n)
+    db.session.commit()
 
 
 # ==================== Вспомогательные функции для загрузок ====================
@@ -417,8 +418,8 @@ def add_review(course_id):
             iname = f"{u.first_name or ''} {u.last_name or ''}".strip() or u.username
             if iname == course.instructor:
                 notify(u.id, 'new_review',
-                       f'Новый отзыв о «{course.name}»',
-                       message=f'{current_user.username} оставил отзыв.',
+                       f'Вы получили новый отзыв о «{course.name}»',
+                       message=f'{current_user.username} оставил отзыв о кружке.',
                        link_url=url_for('course_detail', course_id=course_id))
                 break
     flash('Ваш отзыв сохранён!', 'success')
@@ -463,8 +464,9 @@ def vote_review(review_id):
     db.session.commit()
     # Уведомить автора отзыва (если голосовал не он сам)
     if review.user_id != current_user.id:
-        msg = 'Кто-то посчитал ваш отзыв полезным.' if is_like else 'Кто-то посчитал ваш отзыв не полезным.'
-        notify(review.user_id, 'review_vote', msg,
+        title = 'Кто-то посчитал ваш отзыв полезным.' if is_like else 'Кто-то посчитал ваш отзыв не полезным.'
+        notify(review.user_id, 'review_vote', title,
+               message='Перейти к отзыву',
                link_url=url_for('course_detail', course_id=review.course_id) + '#review-' + str(review_id))
     return redirect(url_for('course_detail', course_id=review.course_id) + '#review-' + str(review_id))
 
@@ -502,7 +504,8 @@ def enroll_course(course_id):
     db.session.add(req)
     db.session.commit()
     notify(current_user.id, 'enrollment_pending',
-           f'Заявка на «{course.name}» на рассмотрении',
+           f'Ваш статус в «{course.name}» — на ожидании',
+           message='Заявка отправлена на рассмотрение администратору кружка.',
            link_url=url_for('course_detail', course_id=course_id))
     # Уведомить админа кружка (препода)
     for u in User.query.filter_by(user_type='circle_admin').all():
@@ -510,7 +513,7 @@ def enroll_course(course_id):
         if iname == course.instructor:
             notify(u.id, 'new_application',
                    f'Новая заявка на запись в «{course.name}»',
-                   message=f'{current_user.username} подал заявку.',
+                   message=f'{current_user.username} подал заявку на запись.',
                    link_url=url_for('course_enrollments', course_id=course_id))
             break
     flash('Заявка отправлена! Администратор кружка скоро её рассмотрит.', 'success')
@@ -1717,7 +1720,8 @@ def approve_enrollment(request_id):
     er.resolved_at = datetime.utcnow()
     db.session.commit()
     notify(er.user_id, 'enrollment_approved',
-           f'Вас приняли на «{course.name}»',
+           f'Вас приняли в «{course.name}»',
+           message='Поздравляем! Заявка одобрена, вы записаны в секцию.',
            link_url=url_for('course_detail', course_id=course.id))
     flash(f'Студент {student.username} одобрен.', 'success')
     return redirect(url_for('course_enrollments', course_id=course.id))
@@ -1746,6 +1750,7 @@ def reject_enrollment(request_id):
     db.session.commit()
     notify(er.user_id, 'enrollment_rejected',
            f'Заявка на «{course.name}» отклонена',
+           message='К сожалению, администратор отклонил вашу заявку на запись.',
            link_url=url_for('course_detail', course_id=course.id))
     flash('Заявка отклонена.', 'info')
     return redirect(url_for('course_enrollments', course_id=course.id))

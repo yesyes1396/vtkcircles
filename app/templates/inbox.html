@@ -10,7 +10,7 @@
 {% if notifications %}
 <div class="list-group">
     {% for n in notifications %}
-    <a href="{{ url_for('inbox_open', notification_id=n.id) }}" class="list-group-item list-group-item-action {{ 'list-group-item-secondary' if n.read_at else '' }} d-flex align-items-start gap-3">
+    <a href="{{ url_for('inbox_open', notification_id=n.id) }}" class="list-group-item list-group-item-action {{ 'list-group-item-secondary' if n.read_at else '' }} d-flex align-items-start gap-3" title="Нажмите, чтобы перейти к событию">
         <span class="mt-1">
             {% if n.kind == 'enrollment_pending' or n.kind == 'new_application' %}
                 <i class="fas fa-clock text-warning"></i>
@@ -31,7 +31,10 @@
             {% if n.message %}<div class="text-muted small mt-0">{{ n.message }}</div>{% endif %}
             <small class="text-muted">{{ n.created_at.strftime('%d.%m.%Y %H:%M') }}</small>
         </div>
-        {% if not n.read_at %}<span class="badge bg-primary rounded-pill">новое</span>{% endif %}
+        <span class="d-flex align-items-center gap-1">
+            {% if not n.read_at %}<span class="badge bg-primary rounded-pill">новое</span>{% endif %}
+            {% if n.link_url %}<i class="fas fa-external-link-alt small text-muted" title="Перейти к событию"></i>{% endif %}
+        </span>
     </a>
     {% endfor %}
 </div>
