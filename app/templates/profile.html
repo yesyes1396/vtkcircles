@@ -135,7 +135,7 @@
                 {% endfor %}
             </div>
         {% else %}
-            <div class="alert alert-info">{% if profile_courses_are_led %}Вы пока не ведёте секций. <a href="{{ url_for('circle_admin_courses') }}">Управление кружками</a>{% else %}Вы пока ни на что не записаны. <a href="/">Каталог секций</a>{% endif %}</div>
+            <div class="alert alert-info">{% if profile_courses_are_led %}{% if current_user.is_admin %}Секций с вашим именем преподавателя пока нет. <a href="{{ url_for('admin_courses') }}">Управление кружками</a>{% else %}Вы пока не ведёте секций. <a href="{{ url_for('circle_admin_courses') }}">Управление кружками</a>{% endif %}{% else %}Вы пока ни на что не записаны. <a href="/">Каталог секций</a>{% endif %}</div>
         {% endif %}
     </div>
 </div>

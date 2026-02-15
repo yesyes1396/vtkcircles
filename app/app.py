@@ -590,7 +590,8 @@ def profile():
     if user.is_admin or user.user_type == 'circle_admin':
         user.hide_courses = False
         db.session.commit()
-    if user.user_type == 'circle_admin':
+    if user.user_type == 'circle_admin' or user.is_admin:
+        # Админ кружка и главный админ видят секции по полю «преподаватель» (главный админ может создавать кружки за себя и за других)
         iname = f"{user.first_name or ''} {user.last_name or ''}".strip() or user.username
         profile_courses = Course.query.filter(Course.instructor == iname).all()
         profile_courses_are_led = True
