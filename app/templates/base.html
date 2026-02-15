@@ -39,9 +39,9 @@
                         {% if current_user.user_type == 'circle_admin' %}
                             <li class="nav-item"><a class="nav-link" href="/circle-admin"><i class="fas fa-chalkboard-teacher"></i> Кружок</a></li>
                         {% endif %}
-                        <li class="nav-item">
+                        <li class="nav-item ms-auto">
                             <div class="dropdown">
-                                <button class="btn btn-sm btn-icon-toggle navbar-settings-btn position-relative d-flex align-items-center justify-content-center" type="button" id="navbarSettingsDropdown" data-bs-toggle="dropdown" aria-expanded="false" title="Настройки и уведомления">
+                                <button class="btn btn-sm btn-icon-toggle navbar-settings-btn position-relative d-flex align-items-center justify-content-center" type="button" id="navbarSettingsDropdown" data-bs-toggle="dropdown" aria-expanded="false" title="Настройки и уведомления" data-bs-boundary="viewport" data-bs-reference="parent">
                                     <i class="fas fa-cog"></i>
                                     {% if unread_notifications_count %}<span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger">{{ unread_notifications_count }}</span>{% endif %}
                                 </button>

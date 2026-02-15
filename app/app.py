@@ -659,19 +659,26 @@ def user_public_profile(user_id):
     """Публичный профиль пользователя (доступен всем)"""
     user = User.query.get_or_404(user_id)
     
-    # Определить, может ли зритель видеть кружки
-    show_courses = False
-    if current_user.is_authenticated and current_user.is_admin:
-        show_courses = True  # Админ видит всё
-    elif current_user.is_authenticated and current_user.id == user.id:
-        show_courses = True  # Свой профиль
-    elif not user.hide_courses:
-        show_courses = True  # Пользователь разрешил показ
-    
-    courses = list(user.courses) if show_courses else []
+    # Для админов кружка в публичном профиле показываем секции, которые они ведут (не записи)
+    profile_show_led_courses = False
+    if user.user_type == 'circle_admin':
+        iname = f"{user.first_name or ''} {user.last_name or ''}".strip() or user.username
+        courses = list(Course.query.filter(Course.instructor == iname).all())
+        show_courses = True
+        profile_show_led_courses = True
+    else:
+        profile_show_led_courses = False
+        show_courses = False
+        if current_user.is_authenticated and current_user.is_admin:
+            show_courses = True
+        elif current_user.is_authenticated and current_user.id == user.id:
+            show_courses = True
+        elif not user.hide_courses:
+            show_courses = True
+        courses = list(user.courses) if show_courses else []
     reviews = Review.query.filter_by(user_id=user.id).order_by(Review.created_at.desc()).all() if show_courses else []
     
-    return render_template('user_profile.html', user=user, courses=courses, reviews=reviews, show_courses=show_courses)
+    return render_template('user_profile.html', user=user, courses=courses, reviews=reviews, show_courses=show_courses, profile_show_led_courses=profile_show_led_courses)
 
 # ==================== Регистрация ====================
 @app.route('/register', methods=['GET', 'POST'])
@@ -1440,8 +1447,12 @@ def admin_respond_complaint(complaint_id):
 @app.route('/course/<int:course_id>/complain', methods=['GET', 'POST'])
 @login_required
 def submit_complaint(course_id):
-    """Отправить жалобу на кружок"""
+    """Отправить жалобу на кружок. Студенты — только если записаны; админы и преподаватели — всегда."""
     course = Course.query.get_or_404(course_id)
+    can_complain = current_user.is_admin or current_user.user_type == 'circle_admin' or (current_user in course.students.all())
+    if not can_complain:
+        flash('Подать жалобу на кружок могут только записанные в него студенты.', 'warning')
+        return redirect(url_for('course_detail', course_id=course_id))
     
     if request.method == 'POST':
         title = request.form.get('title', '').strip()

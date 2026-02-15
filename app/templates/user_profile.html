@@ -65,7 +65,7 @@
                     <div class="profile-info"><strong>На сайте с</strong><br>{{ user.created_at.strftime('%d.%m.%Y') }}</div>
 
                     {% if show_courses %}
-                        <div class="profile-info"><strong>Записей на кружки</strong><br>{{ courses|length }}</div>
+                        <div class="profile-info"><strong>{% if profile_show_led_courses %}Ведёт секций{% else %}Записей на кружки{% endif %}</strong><br>{{ courses|length }}</div>
                     {% endif %}
                 </div>
 
@@ -97,7 +97,7 @@
     <!-- Courses & reviews -->
     <div class="col-lg-8">
         {% if show_courses %}
-            <h4 class="mb-3"><i class="fas fa-list"></i> Кружки</h4>
+            <h4 class="mb-3"><i class="fas fa-list"></i> {% if profile_show_led_courses %}Секции, которые ведёт{% else %}Кружки{% endif %}</h4>
             {% if courses %}
                 <div class="row">
                     {% for course in courses %}
@@ -122,7 +122,7 @@
                     {% endfor %}
                 </div>
             {% else %}
-                <div class="alert alert-info">Нет записей на кружки.</div>
+                <div class="alert alert-info">{% if profile_show_led_courses %}Не ведёт секций.{% else %}Нет записей на кружки.{% endif %}</div>
             {% endif %}
 
             {% if reviews %}
