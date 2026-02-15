@@ -39,14 +39,13 @@
                         {% if current_user.user_type == 'circle_admin' %}
                             <li class="nav-item"><a class="nav-link" href="/circle-admin"><i class="fas fa-chalkboard-teacher"></i> Кружок</a></li>
                         {% endif %}
-                        <li class="nav-item ms-auto">
-                            <div class="dropdown">
-                                <button class="btn btn-sm navbar-settings-btn position-relative d-flex align-items-center gap-1" type="button" id="navbarSettingsDropdown" data-bs-toggle="dropdown" aria-expanded="false" title="Настройки и уведомления" data-bs-boundary="viewport" data-bs-reference="parent">
-                                    <i class="fas fa-cog"></i>
-                                    <span class="navbar-settings-label">Настройки</span>
-                                    {% if unread_notifications_count %}<span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger">{{ unread_notifications_count }}</span>{% endif %}
-                                </button>
-                                <ul class="dropdown-menu dropdown-menu-end dropdown-menu-dark" aria-labelledby="navbarSettingsDropdown">
+                        <li class="nav-item dropdown ms-auto">
+                            <a class="nav-link dropdown-toggle d-flex align-items-center gap-1" href="#" role="button" id="navbarSettingsDropdown" data-bs-toggle="dropdown" aria-expanded="false" title="Настройки и уведомления">
+                                <i class="fas fa-cog"></i>
+                                <span>Настройки</span>
+                                {% if unread_notifications_count %}<span class="badge bg-danger rounded-pill">{{ unread_notifications_count }}</span>{% endif %}
+                            </a>
+                            <ul class="dropdown-menu dropdown-menu-end dropdown-menu-dark" aria-labelledby="navbarSettingsDropdown">
                                     <li>
                                         <a class="dropdown-item d-flex align-items-center gap-2" href="{{ url_for('inbox') }}" title="Уведомления">
                                             <i class="fas fa-bell"></i>
@@ -79,8 +78,7 @@
                                             </button>
                                         </form>
                                     </li>
-                                </ul>
-                            </div>
+                            </ul>
                         </li>
                     {% else %}
                         <li class="nav-item"><a class="nav-link" href="/login"><i class="fas fa-sign-in-alt"></i> Вход</a></li>
@@ -106,10 +104,43 @@
         {% block content %}{% endblock %}
     </main>
 
-    <footer class="mt-auto">
-        <div class="container text-center">
-            <p class="mb-1">&copy; 2026 {{ app_name }} &mdash; Портал секций и кружков</p>
-            <p class="footer-sub mb-0">Учебный проект ВТК</p>
+    <footer class="mt-auto footer-informative">
+        <div class="container py-4">
+            <div class="row g-4 text-center text-lg-start">
+                <div class="col-lg-4">
+                    <h6 class="footer-heading"><i class="fas fa-graduation-cap me-1"></i>{{ app_name }}</h6>
+                    <p class="footer-text small mb-0">Единый портал записи на кружки и секции. Выбирайте направления, записывайтесь онлайн и управляйте своими заявками в одном месте.</p>
+                </div>
+                <div class="col-lg-2">
+                    <h6 class="footer-heading">Навигация</h6>
+                    <ul class="footer-links list-unstyled small mb-0">
+                        <li><a href="/">Главная</a></li>
+                        <li><a href="/#courses">Каталог секций</a></li>
+                        <li><a href="/login">Вход</a></li>
+                        <li><a href="/register">Регистрация</a></li>
+                    </ul>
+                </div>
+                <div class="col-lg-3">
+                    <h6 class="footer-heading">О проекте</h6>
+                    <p class="footer-text small mb-0">ВТК г. Кокшетау — учреждение дополнительного образования. Портал создан для удобной записи на кружки и секции (спорт, искусство, наука, музыка и др.) и рассчитан на возраст 14–22 года.</p>
+                </div>
+                <div class="col-lg-3">
+                    <h6 class="footer-heading">Контакты</h6>
+                    <p class="footer-text small mb-0">
+                        <i class="fas fa-map-marker-alt me-1"></i> г. Кокшетау, Казахстан<br>
+                        <i class="fas fa-globe me-1"></i> Портал секций и кружков
+                    </p>
+                </div>
+            </div>
+            <hr class="footer-divider">
+            <div class="row align-items-center">
+                <div class="col-md-6 text-center text-md-start">
+                    <p class="footer-copy small mb-0">&copy; 2026 {{ app_name }}. Все права защищены.</p>
+                </div>
+                <div class="col-md-6 text-center text-md-end mt-2 mt-md-0">
+                    <p class="footer-sub small mb-0">Учебный проект — Портал секций и кружков</p>
+                </div>
+            </div>
         </div>
     </footer>
 

@@ -65,18 +65,8 @@ a:hover{color:var(--vtk-primary-d);}
     transition:.2s;
 }
 .btn-icon-toggle:hover{background:rgba(255,255,255,.25);color:#fff;}
-/* Кнопка настроек (выпадающее меню) в навбаре */
-/* Кнопка настроек без стрелки, с индикатором уведомлений */
-.navbar .navbar-settings-btn{padding:0.35rem 0.6rem;border:none;background:rgba(255,255,255,.15);color:#fff;border-radius:999px;transition:.2s;}
-.navbar .navbar-settings-btn:hover{background:rgba(255,255,255,.25);color:#fff;}
-.navbar .navbar-settings-btn::after{display:none;}
-.navbar .navbar-settings-label{white-space:nowrap;}
-@media (min-width: 992px){
-    .navbar .navbar-settings-label{display:none;}
-    .navbar .navbar-settings-btn{padding:0;width:34px;height:34px;border-radius:50%;justify-content:center;}
-}
-.navbar .dropdown .dropdown-menu{min-width:220px;}
-/* На мобильной: кнопка настроек в потоке после пунктов меню (не уезжает вправо и не смещается при открытии) */
+/* Кнопка «Настройки» — те же параметры, что и у «Админ»: nav-link dropdown (не съезжает на мобильной) */
+.navbar .nav-item.dropdown .dropdown-menu{min-width:220px;}
 @media (max-width: 991.98px){
     .navbar .navbar-nav{width:100%;justify-content:flex-start;flex-wrap:wrap;}
     .navbar .navbar-nav .nav-item.ms-auto{margin-left:0 !important;}
@@ -157,7 +147,14 @@ a:hover{color:var(--vtk-primary-d);}
 .table thead{background:var(--vtk-bg);}
 
 /* ---------- Footer ---------- */
-footer{background:var(--vtk-footer-bg);color:var(--vtk-footer-fg);padding:22px 0;margin-top:auto;width:100%;}
+footer{background:var(--vtk-footer-bg);color:var(--vtk-footer-fg);margin-top:auto;width:100%;}
+.footer-informative .footer-heading{font-weight:600;font-size:0.95rem;margin-bottom:0.5rem;color:var(--vtk-footer-fg);}
+.footer-informative .footer-text{color:var(--vtk-footer-fg);opacity:.9;}
+.footer-informative .footer-links a{color:var(--vtk-footer-fg);opacity:.9;text-decoration:none;}
+.footer-informative .footer-links a:hover{opacity:1;text-decoration:underline;}
+.footer-informative .footer-links li{margin-bottom:0.35rem;}
+.footer-informative .footer-divider{border-color:rgba(255,255,255,.12);margin:1rem 0;}
+.footer-informative .footer-copy,.footer-informative .footer-sub{opacity:.85;}
 .footer-sub{color:var(--vtk-muted);font-size:.85rem;}
 
 /* ---------- Buttons ---------- */
