@@ -14,11 +14,13 @@
         <!-- Поиск -->
         <div class="card mb-4">
             <div class="card-body">
-                <form method="get" class="d-flex gap-2">
-                    <input type="text" name="search" class="form-control" placeholder="Поиск по имени, email..." value="{{ search }}">
+                <form method="get" class="d-flex flex-wrap gap-2 align-items-center">
+                    <input type="hidden" name="sort" value="{{ sort }}">
+                    <input type="hidden" name="order" value="{{ order }}">
+                    <input type="text" name="search" class="form-control" style="max-width:280px;" placeholder="Поиск по имени, email..." value="{{ search }}">
                     <button type="submit" class="btn btn-primary"><i class="fas fa-search"></i> Найти</button>
                     {% if search %}
-                        <a href="/admin/users" class="btn btn-secondary"><i class="fas fa-times"></i> Сбросить</a>
+                        <a href="{{ url_for('admin_users', sort=sort, order=order) }}" class="btn btn-secondary"><i class="fas fa-times"></i> Сбросить</a>
                     {% endif %}
                 </form>
             </div>
@@ -29,9 +31,17 @@
             <table class="table">
                 <thead>
                     <tr>
-                        <th>Пользователь</th>
+                        <th>
+                            <a href="?sort=name&order={{ 'desc' if sort == 'name' and order == 'asc' else 'asc' }}&search={{ search }}" class="text-decoration-none text-reset">
+                                Пользователь {% if sort == 'name' %}<i class="fas fa-sort-{{ order }} small"></i>{% endif %}
+                            </a>
+                        </th>
                         <th>Email</th>
-                        <th>Тип</th>
+                        <th>
+                            <a href="?sort=type&order={{ 'desc' if sort == 'type' and order == 'asc' else 'asc' }}&search={{ search }}" class="text-decoration-none text-reset">
+                                Тип {% if sort == 'type' %}<i class="fas fa-sort-{{ order }} small"></i>{% endif %}
+                            </a>
+                        </th>
                         <th>Статус</th>
                         <th>Дата создания</th>
                         <th>Действия</th>
@@ -113,8 +123,8 @@
         <nav class="mt-4">
             <ul class="pagination justify-content-center">
                 {% if users.has_prev %}
-                    <li class="page-item"><a class="page-link" href="?page=1&search={{ search }}">«</a></li>
-                    <li class="page-item"><a class="page-link" href="?page={{ users.prev_num }}&search={{ search }}">‹</a></li>
+                    <li class="page-item"><a class="page-link" href="?page=1&search={{ search }}&sort={{ sort }}&order={{ order }}">«</a></li>
+                    <li class="page-item"><a class="page-link" href="?page={{ users.prev_num }}&search={{ search }}&sort={{ sort }}&order={{ order }}">‹</a></li>
                 {% endif %}
                 
                 {% for page_num in users.iter_pages() %}
@@ -122,14 +132,14 @@
                         {% if page_num == users.page %}
                             <li class="page-item active"><span class="page-link">{{ page_num }}</span></li>
                         {% else %}
-                            <li class="page-item"><a class="page-link" href="?page={{ page_num }}&search={{ search }}">{{ page_num }}</a></li>
+                            <li class="page-item"><a class="page-link" href="?page={{ page_num }}&search={{ search }}&sort={{ sort }}&order={{ order }}">{{ page_num }}</a></li>
                         {% endif %}
                     {% endif %}
                 {% endfor %}
                 
                 {% if users.has_next %}
-                    <li class="page-item"><a class="page-link" href="?page={{ users.next_num }}&search={{ search }}">›</a></li>
-                    <li class="page-item"><a class="page-link" href="?page={{ users.pages }}&search={{ search }}">»</a></li>
+                    <li class="page-item"><a class="page-link" href="?page={{ users.next_num }}&search={{ search }}&sort={{ sort }}&order={{ order }}">›</a></li>
+                    <li class="page-item"><a class="page-link" href="?page={{ users.pages }}&search={{ search }}&sort={{ sort }}&order={{ order }}">»</a></li>
                 {% endif %}
             </ul>
         </nav>

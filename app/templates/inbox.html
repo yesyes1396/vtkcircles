@@ -2,9 +2,17 @@
 {% block title %}Уведомления{% endblock %}
 
 {% block content %}
-<div class="d-flex align-items-center gap-3 mb-4">
-    <a href="/profile" class="btn btn-outline-secondary btn-sm"><i class="fas fa-arrow-left"></i> В кабинет</a>
-    <h4 class="mb-0"><i class="fas fa-bell"></i> Уведомления</h4>
+<div class="d-flex flex-wrap align-items-center justify-content-between gap-3 mb-4">
+    <div class="d-flex align-items-center gap-3">
+        <a href="/profile" class="btn btn-outline-secondary btn-sm"><i class="fas fa-arrow-left"></i> В кабинет</a>
+        <h4 class="mb-0"><i class="fas fa-bell"></i> Уведомления</h4>
+    </div>
+    {% if notifications and notifications|selectattr('read_at', 'none')|list|length > 0 %}
+    <form method="POST" action="{{ url_for('inbox_read_all') }}" class="mb-0">
+        <input type="hidden" name="_csrf_token" value="{{ csrf_token() }}">
+        <button type="submit" class="btn btn-outline-primary btn-sm"><i class="fas fa-check-double"></i> Прочитать все</button>
+    </form>
+    {% endif %}
 </div>
 
 {% if notifications %}
@@ -22,6 +30,10 @@
                 <i class="fas fa-star text-warning"></i>
             {% elif n.kind == 'complaint_status' %}
                 <i class="fas fa-exclamation-circle text-info"></i>
+            {% elif n.kind == 'new_complaint' %}
+                <i class="fas fa-exclamation-triangle text-warning"></i>
+            {% elif n.kind == 'pending_circle_admin' %}
+                <i class="fas fa-user-check text-info"></i>
             {% else %}
                 <i class="fas fa-bell text-muted"></i>
             {% endif %}

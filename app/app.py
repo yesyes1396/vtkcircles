@@ -587,6 +587,9 @@ def profile():
         return redirect(url_for('profile'))
     
     user = current_user
+    if user.is_admin or user.user_type == 'circle_admin':
+        user.hide_courses = False
+        db.session.commit()
     if user.user_type == 'circle_admin':
         iname = f"{user.first_name or ''} {user.last_name or ''}".strip() or user.username
         profile_courses = Course.query.filter(Course.instructor == iname).all()
@@ -617,6 +620,19 @@ def inbox():
     """Список всех уведомлений"""
     notifications = Notification.query.filter_by(user_id=current_user.id).order_by(Notification.created_at.desc()).limit(100).all()
     return render_template('inbox.html', notifications=notifications)
+
+
+@app.route('/inbox/read-all', methods=['POST'])
+@login_required
+def inbox_read_all():
+    """Отметить все уведомления как прочитанные"""
+    now = datetime.utcnow()
+    count = Notification.query.filter_by(user_id=current_user.id, read_at=None).count()
+    Notification.query.filter_by(user_id=current_user.id, read_at=None).update({Notification.read_at: now}, synchronize_session=False)
+    db.session.commit()
+    if count:
+        flash(f'Отмечено прочитанными: {count}.', 'success')
+    return redirect(url_for('inbox'))
 
 
 @app.route('/inbox/<int:notification_id>/open')
@@ -770,7 +786,12 @@ def register():
         
         db.session.add(user)
         db.session.commit()
-        
+        if user_type == 'circle_admin':
+            for admin in User.query.filter_by(is_admin=True).all():
+                notify(admin.id, 'pending_circle_admin',
+                       'Новая заявка на роль администратора кружка',
+                       message=f'{user.username} ({user.first_name} {user.last_name}) ожидает модерации.',
+                       link_url=url_for('admin_dashboard'))
         if user_type == 'circle_admin':
             flash('Регистрация успешна! Ваш аккаунт отправлен на модерацию. Вы получите уведомление после проверки.', 'success')
         else:
@@ -1292,15 +1313,29 @@ def admin_users():
     """Управление пользователями"""
     page = request.args.get('page', 1, type=int)
     search = request.args.get('search', '').strip()
+    sort = request.args.get('sort', 'name')
+    order = request.args.get('order', 'asc')
     
     query = User.query
     if search:
         query = query.filter((User.username.ilike(f'%{search}%')) | 
                             (User.email.ilike(f'%{search}%')) |
                             (User.first_name.ilike(f'%{search}%')))
+    if sort == 'type':
+        # Сначала админы, потом админы кружков, потом студенты; внутри группы по имени
+        if order == 'desc':
+            query = query.order_by(User.is_admin.asc(), User.user_type.desc(), User.last_name.desc(), User.first_name.desc())
+        else:
+            query = query.order_by(User.is_admin.desc(), User.user_type.asc(), User.last_name.asc(), User.first_name.asc())
+    else:
+        # по имени (фамилия, имя)
+        if order == 'desc':
+            query = query.order_by(User.last_name.desc(), User.first_name.desc())
+        else:
+            query = query.order_by(User.last_name.asc(), User.first_name.asc())
     
     users = query.paginate(page=page, per_page=20)
-    return render_template('admin/users.html', users=users, search=search)
+    return render_template('admin/users.html', users=users, search=search, sort=sort, order=order)
 
 @app.route('/admin/courses')
 @admin_required
@@ -1424,7 +1459,11 @@ def submit_complaint(course_id):
         )
         db.session.add(complaint)
         db.session.commit()
-        
+        for admin in User.query.filter_by(is_admin=True).all():
+            notify(admin.id, 'new_complaint',
+                   f'Новая жалоба: «{title[:50]}{"…" if len(title) > 50 else ""}»',
+                   message=f'От пользователя {current_user.username}. Кружок: {course.name}.',
+                   link_url=url_for('admin_complaint_detail', complaint_id=complaint.id))
         flash('Ваша жалоба успешно отправлена. Администратор вскоре ответит.', 'success')
         return redirect(url_for('course_detail', course_id=course_id))
     
@@ -1475,6 +1514,9 @@ def circle_admin_create_course():
     if current_user.user_type != 'circle_admin' or not current_user.is_approved:
         flash('У вас нет прав доступа.', 'danger')
         return redirect(url_for('circle_admin_dashboard'))
+    if not current_user.avatar:
+        flash('Чтобы создавать кружки, загрузите фото в профиле (аватар).', 'warning')
+        return redirect(url_for('profile'))
     
     if request.method == 'POST':
         name = request.form.get('name', '').strip()
