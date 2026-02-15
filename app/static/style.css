@@ -71,10 +71,10 @@ a:hover{color:var(--vtk-primary-d);}
 .navbar .navbar-settings-btn:hover{background:rgba(255,255,255,.25);color:#fff;}
 .navbar .navbar-settings-btn::after{display:none;}
 .navbar .dropdown .dropdown-menu{min-width:220px;}
-/* На мобильной кнопка настроек остаётся справа, не съезжает при открытии */
+/* На мобильной: кнопка настроек в потоке после пунктов меню (не уезжает вправо и не смещается при открытии) */
 @media (max-width: 991.98px){
     .navbar .navbar-nav{width:100%;justify-content:flex-start;flex-wrap:wrap;}
-    .navbar .navbar-nav .nav-item.ms-auto{margin-left:auto !important;}
+    .navbar .navbar-nav .nav-item.ms-auto{margin-left:0 !important;}
 }
 /* Карточка кружка: изображение без рамки, заполняет блок */
 .course-card-header{min-height:140px;}

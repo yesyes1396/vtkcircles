@@ -660,9 +660,9 @@ def user_public_profile(user_id):
     """Публичный профиль пользователя (доступен всем)"""
     user = User.query.get_or_404(user_id)
     
-    # Для админов кружка в публичном профиле показываем секции, которые они ведут (не записи)
+    # Для админов кружка и главного админа в публичном профиле показываем секции по полю «преподаватель»
     profile_show_led_courses = False
-    if user.user_type == 'circle_admin':
+    if user.user_type == 'circle_admin' or user.is_admin:
         iname = f"{user.first_name or ''} {user.last_name or ''}".strip() or user.username
         courses = list(Course.query.filter(Course.instructor == iname).all())
         show_courses = True
@@ -1321,6 +1321,7 @@ def admin_users():
     """Управление пользователями"""
     page = request.args.get('page', 1, type=int)
     search = request.args.get('search', '').strip()
+    filter_type = request.args.get('type', '').strip()  # '', 'student', 'circle_admin', 'admin'
     sort = request.args.get('sort', 'name')
     order = request.args.get('order', 'asc')
     
@@ -1329,6 +1330,12 @@ def admin_users():
         query = query.filter((User.username.ilike(f'%{search}%')) | 
                             (User.email.ilike(f'%{search}%')) |
                             (User.first_name.ilike(f'%{search}%')))
+    if filter_type == 'admin':
+        query = query.filter(User.is_admin == True)
+    elif filter_type == 'circle_admin':
+        query = query.filter(User.user_type == 'circle_admin', User.is_admin == False)
+    elif filter_type == 'student':
+        query = query.filter(User.is_admin == False, User.user_type != 'circle_admin')
     if sort == 'type':
         # Сначала админы, потом админы кружков, потом студенты; внутри группы по имени
         if order == 'desc':
@@ -1343,7 +1350,7 @@ def admin_users():
             query = query.order_by(User.last_name.asc(), User.first_name.asc())
     
     users = query.paginate(page=page, per_page=20)
-    return render_template('admin/users.html', users=users, search=search, sort=sort, order=order)
+    return render_template('admin/users.html', users=users, search=search, filter_type=filter_type, sort=sort, order=order)
 
 @app.route('/admin/courses')
 @admin_required
