@@ -2,9 +2,9 @@ import os
 from flask import Flask, render_template, request, redirect, url_for, flash, jsonify, session, send_from_directory
 from flask_login import LoginManager, login_user, logout_user, login_required, current_user
 try:
-    from .models import db, User, Course, enrollment, Review, ReviewVote, Complaint, EnrollmentRequest
+    from .models import db, User, Course, enrollment, Review, ReviewVote, Complaint, EnrollmentRequest, Notification
 except ImportError:
-    from models import db, User, Course, enrollment, Review, ReviewVote, Complaint, EnrollmentRequest
+    from models import db, User, Course, enrollment, Review, ReviewVote, Complaint, EnrollmentRequest, Notification
 from datetime import datetime, timedelta, date
 from functools import wraps
 from werkzeug.utils import secure_filename
@@ -57,6 +57,16 @@ login_manager.login_message_category = 'info'
 def load_user(user_id):
     return User.query.get(int(user_id))
 
+
+@app.context_processor
+def inject_notification_count():
+    """Счётчик непрочитанных уведомлений в шапке"""
+    if current_user.is_authenticated:
+        count = Notification.query.filter_by(user_id=current_user.id, read_at=None).count()
+        return dict(unread_notifications_count=count)
+    return dict(unread_notifications_count=0)
+
+
 # ==================== Проверка блокировки перед каждым запросом ====================
 @app.before_request
 def check_if_user_blocked():
@@ -88,6 +98,15 @@ def circle_admin_required(f):
             return redirect(url_for('index'))
         return f(*args, **kwargs)
     return decorated_function
+
+
+def notify(user_id, kind, title, message=None, link_url=None):
+    """Создать уведомление для пользователя."""
+    if user_id is None:
+        return
+    n = Notification(user_id=user_id, kind=kind, title=title, message=message, link_url=link_url)
+    db.session.add(n)
+
 
 # ==================== Вспомогательные функции для загрузок ====================
 def delete_file_if_exists(relative_path):
@@ -383,14 +402,25 @@ def add_review(course_id):
         return redirect(url_for('course_detail', course_id=course_id))
 
     existing = Review.query.filter_by(course_id=course_id, user_id=current_user.id).first()
+    is_new = False
     if existing:
         existing.rating = rating
         existing.text = text
     else:
         review = Review(user_id=current_user.id, course_id=course_id, rating=rating, text=text)
         db.session.add(review)
+        is_new = True
 
     db.session.commit()
+    if is_new and course.instructor:
+        for u in User.query.filter_by(user_type='circle_admin').all():
+            iname = f"{u.first_name or ''} {u.last_name or ''}".strip() or u.username
+            if iname == course.instructor:
+                notify(u.id, 'new_review',
+                       f'Новый отзыв о «{course.name}»',
+                       message=f'{current_user.username} оставил отзыв.',
+                       link_url=url_for('course_detail', course_id=course_id))
+                break
     flash('Ваш отзыв сохранён!', 'success')
     return redirect(url_for('course_detail', course_id=course_id))
 
@@ -431,6 +461,11 @@ def vote_review(review_id):
         db.session.add(ReviewVote(user_id=current_user.id, review_id=review_id, is_like=is_like))
 
     db.session.commit()
+    # Уведомить автора отзыва (если голосовал не он сам)
+    if review.user_id != current_user.id:
+        msg = 'Кто-то посчитал ваш отзыв полезным.' if is_like else 'Кто-то посчитал ваш отзыв не полезным.'
+        notify(review.user_id, 'review_vote', msg,
+               link_url=url_for('course_detail', course_id=review.course_id) + '#review-' + str(review_id))
     return redirect(url_for('course_detail', course_id=review.course_id) + '#review-' + str(review_id))
 
 
@@ -466,8 +501,19 @@ def enroll_course(course_id):
     req = EnrollmentRequest(user_id=current_user.id, course_id=course_id)
     db.session.add(req)
     db.session.commit()
+    notify(current_user.id, 'enrollment_pending',
+           f'Заявка на «{course.name}» на рассмотрении',
+           link_url=url_for('course_detail', course_id=course_id))
+    # Уведомить админа кружка (препода)
+    for u in User.query.filter_by(user_type='circle_admin').all():
+        iname = f"{u.first_name or ''} {u.last_name or ''}".strip() or u.username
+        if iname == course.instructor:
+            notify(u.id, 'new_application',
+                   f'Новая заявка на запись в «{course.name}»',
+                   message=f'{current_user.username} подал заявку.',
+                   link_url=url_for('course_enrollments', course_id=course_id))
+            break
     flash('Заявка отправлена! Администратор кружка скоро её рассмотрит.', 'success')
-    
     return redirect(url_for('course_detail', course_id=course_id))
 
 # ==================== Отмена заявки ====================
@@ -555,6 +601,34 @@ def toggle_courses_visibility():
     else:
         flash('Ваши записи на кружки теперь видны в вашем публичном профиле.', 'success')
     return redirect(url_for('profile'))
+
+
+# ==================== Инбокс уведомлений ====================
+@app.route('/inbox')
+@login_required
+def inbox():
+    """Список всех уведомлений"""
+    notifications = Notification.query.filter_by(user_id=current_user.id).order_by(Notification.created_at.desc()).limit(100).all()
+    return render_template('inbox.html', notifications=notifications)
+
+
+@app.route('/inbox/<int:notification_id>/open')
+@login_required
+def inbox_open(notification_id):
+    """Открыть уведомление: отметить прочитанным и перейти по ссылке"""
+    n = Notification.query.get_or_404(notification_id)
+    if n.user_id != current_user.id:
+        flash('Нет доступа.', 'danger')
+        return redirect(url_for('inbox'))
+    if not n.read_at:
+        n.read_at = datetime.utcnow()
+        db.session.commit()
+    if n.link_url:
+        if n.link_url.startswith('http'):
+            return redirect(n.link_url)
+        return redirect(n.link_url)
+    return redirect(url_for('inbox'))
+
 
 # ==================== Публичный профиль пользователя ====================
 @app.route('/user/<int:user_id>')
@@ -1642,6 +1716,9 @@ def approve_enrollment(request_id):
     er.status = 'approved'
     er.resolved_at = datetime.utcnow()
     db.session.commit()
+    notify(er.user_id, 'enrollment_approved',
+           f'Вас приняли на «{course.name}»',
+           link_url=url_for('course_detail', course_id=course.id))
     flash(f'Студент {student.username} одобрен.', 'success')
     return redirect(url_for('course_enrollments', course_id=course.id))
 
@@ -1667,6 +1744,9 @@ def reject_enrollment(request_id):
     er.status = 'rejected'
     er.resolved_at = datetime.utcnow()
     db.session.commit()
+    notify(er.user_id, 'enrollment_rejected',
+           f'Заявка на «{course.name}» отклонена',
+           link_url=url_for('course_detail', course_id=course.id))
     flash('Заявка отклонена.', 'info')
     return redirect(url_for('course_enrollments', course_id=course.id))
 

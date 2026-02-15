@@ -165,6 +165,23 @@ class EnrollmentRequest(db.Model):
         return f'<EnrollmentRequest {self.id} user={self.user_id} course={self.course_id} status={self.status}>'
 
 
+class Notification(db.Model):
+    """Уведомление пользователя (инбокс)"""
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
+    kind = db.Column(db.String(50), nullable=False)  # enrollment_pending, enrollment_approved, enrollment_rejected, review_vote, new_application, new_review
+    title = db.Column(db.String(200), nullable=False)
+    message = db.Column(db.Text)
+    link_url = db.Column(db.String(500))  # Куда перейти по клику
+    read_at = db.Column(db.DateTime)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+
+    user = db.relationship('User', backref=db.backref('notifications', lazy='dynamic', order_by='Notification.created_at.desc()'))
+
+    def __repr__(self):
+        return f'<Notification {self.id} user={self.user_id} kind={self.kind}>'
+
+
 class Complaint(db.Model):
     """Модель жалобы на кружок"""
     id = db.Column(db.Integer, primary_key=True)

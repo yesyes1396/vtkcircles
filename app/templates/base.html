@@ -23,6 +23,13 @@
                     <li class="nav-item"><a class="nav-link" href="/"><i class="fas fa-home"></i> Главная</a></li>
                     {% if current_user.is_authenticated %}
                         <li class="nav-item"><a class="nav-link" href="/profile"><i class="fas fa-user-circle"></i> Кабинет</a></li>
+                        <li class="nav-item">
+                            <a class="nav-link d-flex align-items-center gap-1" href="/inbox" title="Уведомления">
+                                <i class="fas fa-bell"></i>
+                                <span>Уведомления</span>
+                                {% if unread_notifications_count %}<span class="badge bg-danger rounded-pill">{{ unread_notifications_count }}</span>{% endif %}
+                            </a>
+                        </li>
                         {% if current_user.is_admin %}
                             <li class="nav-item dropdown">
                                 <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown"><i class="fas fa-shield-alt"></i> Админ</a>

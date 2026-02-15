@@ -1,0 +1,43 @@
+{% extends "base.html" %}
+{% block title %}Уведомления{% endblock %}
+
+{% block content %}
+<div class="d-flex align-items-center gap-3 mb-4">
+    <a href="/profile" class="btn btn-outline-secondary btn-sm"><i class="fas fa-arrow-left"></i> В кабинет</a>
+    <h4 class="mb-0"><i class="fas fa-bell"></i> Уведомления</h4>
+</div>
+
+{% if notifications %}
+<div class="list-group">
+    {% for n in notifications %}
+    <a href="{{ url_for('inbox_open', notification_id=n.id) }}" class="list-group-item list-group-item-action {{ 'list-group-item-secondary' if n.read_at else '' }} d-flex align-items-start gap-3">
+        <span class="mt-1">
+            {% if n.kind == 'enrollment_pending' or n.kind == 'new_application' %}
+                <i class="fas fa-clock text-warning"></i>
+            {% elif n.kind == 'enrollment_approved' %}
+                <i class="fas fa-check-circle text-success"></i>
+            {% elif n.kind == 'enrollment_rejected' %}
+                <i class="fas fa-times-circle text-danger"></i>
+            {% elif n.kind == 'review_vote' %}
+                <i class="fas fa-thumbs-up text-info"></i>
+            {% elif n.kind == 'new_review' %}
+                <i class="fas fa-star text-warning"></i>
+            {% else %}
+                <i class="fas fa-bell text-muted"></i>
+            {% endif %}
+        </span>
+        <div class="flex-grow-1 min-w-0">
+            <strong>{{ n.title }}</strong>
+            {% if n.message %}<div class="text-muted small mt-0">{{ n.message }}</div>{% endif %}
+            <small class="text-muted">{{ n.created_at.strftime('%d.%m.%Y %H:%M') }}</small>
+        </div>
+        {% if not n.read_at %}<span class="badge bg-primary rounded-pill">новое</span>{% endif %}
+    </a>
+    {% endfor %}
+</div>
+{% else %}
+<div class="alert alert-info">
+    <i class="fas fa-inbox"></i> Пока нет уведомлений.
+</div>
+{% endif %}
+{% endblock %}
