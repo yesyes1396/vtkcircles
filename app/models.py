@@ -25,6 +25,7 @@ class User(UserMixin, db.Model):
     avatar = db.Column(db.String(255))  # Путь к аватару
     phone = db.Column(db.String(20))  # Номер телефона (для админов кружков)
     contact_document = db.Column(db.String(255))  # Путь к документу/фото (для админов кружков)
+    group = db.Column(db.String(120))  # Группа студента
     is_admin = db.Column(db.Boolean, default=False)
     user_type = db.Column(db.String(20), default='student')  # 'student' или 'circle_admin'
     is_verified = db.Column(db.Boolean, default=False)  # Верификация email
@@ -159,6 +160,10 @@ class EnrollmentRequest(db.Model):
     status = db.Column(db.String(20), default='pending')  # pending, approved, rejected
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     resolved_at = db.Column(db.DateTime)
+    # Анкета при записи на кружок
+    questionnaire_experience = db.Column(db.Text)  # Опыт в этой области
+    questionnaire_motivation = db.Column(db.Text)  # Мотивация/причина записи
+    questionnaire_notes = db.Column(db.Text)  # Дополнительные заметки
 
     user = db.relationship('User', backref=db.backref('enrollment_requests', lazy='dynamic'))
     course = db.relationship('Course', backref=db.backref('enrollment_requests', lazy='dynamic'))
@@ -202,3 +207,14 @@ class Complaint(db.Model):
 
     def __repr__(self):
         return f'<Complaint {self.id} by {self.user_id} for course {self.course_id}>'
+
+
+class SiteSettings(db.Model):
+    """Модель для настроек сайта (логотип, баннер и т.д.)"""
+    id = db.Column(db.Integer, primary_key=True)
+    logo = db.Column(db.String(255))  # Путь к логотипу
+    banner = db.Column(db.String(255))  # Путь к баннеру главной страницы
+    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+
+    def __repr__(self):
+        return f'<SiteSettings id={self.id}>'

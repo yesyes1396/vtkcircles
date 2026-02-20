@@ -39,6 +39,120 @@
                             <label for="birth_date" class="form-label">Дата рождения *</label>
                             <input type="date" class="form-control" id="birth_date" name="birth_date" required value="{{ birth_date or '' }}">
                         </div>
+                        <div class="col-12" id="group_field">
+                            <label for="group" class="form-label">Группа *</label>
+                            <select class="form-control" id="group" name="group" required>
+                                <option value="">— Выберите группу —</option>
+                                <option value="А-23-1">А-23-1</option>
+                                <option value="А-23-2">А-23-2</option>
+                                <option value="А-24-1">А-24-1</option>
+                                <option value="А-24-2">А-24-2</option>
+                                <option value="А-24-3">А-24-3</option>
+                                <option value="А-25-1">А-25-1</option>
+                                <option value="А-25-2">А-25-2</option>
+                                <option value="АУП-23-Ц">АУП-23-Ц</option>
+                                <option value="АУП-25">АУП-25</option>
+                                <option value="ВТ-23-11">ВТ-23-11</option>
+                                <option value="ВТ-24-П">ВТ-24-П</option>
+                                <option value="ВТ-25-Т">ВТ-25-Т</option>
+                                <option value="ГЕО-23">ГЕО-23</option>
+                                <option value="ГЕО-24">ГЕО-24</option>
+                                <option value="ГЕО-24-Ц">ГЕО-24-Ц</option>
+                                <option value="ГЕО-25-1">ГЕО-25-1</option>
+                                <option value="ГЕО-25-2">ГЕО-25-2</option>
+                                <option value="ДИЗ-23">ДИЗ-23</option>
+                                <option value="ДИЗ-24">ДИЗ-24</option>
+                                <option value="ДИЗ-25">ДИЗ-25</option>
+                                <option value="ДС-24-Ц">ДС-24-Ц</option>
+                                <option value="ДС-25">ДС-25</option>
+                                <option value="ДС-25-Т">ДС-25-Т</option>
+                                <option value="МВТ-24">МВТ-24</option>
+                                <option value="МВТ-25">МВТ-25</option>
+                                <option value="МГЗ-24">МГЗ-24</option>
+                                <option value="МГЗ-25">МГЗ-25</option>
+                                <option value="МК-23">МК-23</option>
+                                <option value="МК-25">МК-25</option>
+                                <option value="МП-23">МП-23</option>
+                                <option value="МП-24-Ц">МП-24-Ц</option>
+                                <option value="МП-25-Ц">МП-25-Ц</option>
+                                <option value="МПО-24">МПО-24</option>
+                                <option value="МС-23">МС-23</option>
+                                <option value="МС-24-П">МС-24-П</option>
+                                <option value="МС-24-Т">МС-24-Т</option>
+                                <option value="МС-24-Ц">МС-24-Ц</option>
+                                <option value="МС-25-П">МС-25-П</option>
+                                <option value="МС-25-Т">МС-25-Т</option>
+                                <option value="МС-25-Ц">МС-25-Ц</option>
+                                <option value="МХТ-24-Ц">МХТ-24-Ц</option>
+                                <option value="МХТ-23-1">МХТ-23-1</option>
+                                <option value="МХТ-23-2">МХТ-23-2</option>
+                                <option value="МХТ-25-Ц">МХТ-25-Ц</option>
+                                <option value="ОПИ-25">ОПИ-25</option>
+                                <option value="ПАР-25">ПАР-25</option>
+                                <option value="ПАР-25-11-Ц">ПАР-25-11-Ц</option>
+                                <option value="ПАР-25-Ц">ПАР-25-Ц</option>
+                                <option value="РПО-23-1">РПО-23-1</option>
+                                <option value="РПО-23-2">РПО-23-2</option>
+                                <option value="РПО-23-3">РПО-23-3</option>
+                                <option value="РПО-24-1">РПО-24-1</option>
+                                <option value="РПО-24-2">РПО-24-2</option>
+                                <option value="РПО-24-3">РПО-24-3</option>
+                                <option value="РПО-25-1">РПО-25-1</option>
+                                <option value="РПО-25-2">РПО-25-2</option>
+                                <option value="СД-23">СД-23</option>
+                                <option value="СД-24-Ц">СД-24-Ц</option>
+                                <option value="СД-25-Ц">СД-25-Ц</option>
+                                <option value="СДС-23">СДС-23</option>
+                                <option value="СДС-25">СДС-25</option>
+                                <option value="ТИС-24">ТИС-24</option>
+                                <option value="ТИС-25">ТИС-25</option>
+                                <option value="ТИС-25-11">ТИС-25-11</option>
+                                <option value="ТМ-23-1">ТМ-23-1</option>
+                                <option value="ТМ-23-2">ТМ-23-2</option>
+                                <option value="ТМ-23-П">ТМ-23-П</option>
+                                <option value="ТМ-24-1">ТМ-24-1</option>
+                                <option value="ТМ-24-2">ТМ-24-2</option>
+                                <option value="ТМ-24-Ж">ТМ-24-Ж</option>
+                                <option value="ТМ-24-П">ТМ-24-П</option>
+                                <option value="ТМ-24-Ц">ТМ-24-Ц</option>
+                                <option value="ТМ-25-1">ТМ-25-1</option>
+                                <option value="ТМ-25-2">ТМ-25-2</option>
+                                <option value="ТМ-25-3">ТМ-25-3</option>
+                                <option value="ТМ-25-5">ТМ-25-5</option>
+                                <option value="ТМ-25-П">ТМ-25-П</option>
+                                <option value="ТМ-25-Т">ТМ-25-Т</option>
+                                <option value="ТМ-25-Т-2">ТМ-25-Т-2</option>
+                                <option value="ТС-23-П">ТС-23-П</option>
+                                <option value="ТС-24">ТС-24</option>
+                                <option value="ТС-24-Т">ТС-24-Т</option>
+                                <option value="ТС-25-Т">ТС-25-Т</option>
+                                <option value="ТС-25-Ц">ТС-25-Ц</option>
+                                <option value="ТСА-23">ТСА-23</option>
+                                <option value="ТСА-24-1">ТСА-24-1</option>
+                                <option value="ТСА-24-2">ТСА-24-2</option>
+                                <option value="ТСА-25-1">ТСА-25-1</option>
+                                <option value="ТСА-25-2">ТСА-25-2</option>
+                                <option value="ТСТП-23">ТСТП-23</option>
+                                <option value="ТСТП-24">ТСТП-24</option>
+                                <option value="ТСТП-25">ТСТП-25</option>
+                                <option value="ТТ-23-Ц">ТТ-23-Ц</option>
+                                <option value="ТТ-25-11">ТТ-25-11</option>
+                                <option value="ТЭМ-24-Ц">ТЭМ-24-Ц</option>
+                                <option value="ТЭМ-23-1">ТЭМ-23-1</option>
+                                <option value="ТЭМ-23-2">ТЭМ-23-2</option>
+                                <option value="ТЭМ-24">ТЭМ-24</option>
+                                <option value="ТЭМ-25">ТЭМ-25</option>
+                                <option value="УА-23-1">УА-23-1</option>
+                                <option value="УА-23-2">УА-23-2</option>
+                                <option value="УА-24">УА-24</option>
+                                <option value="УА-24-Ц">УА-24-Ц</option>
+                                <option value="УА-25-1">УА-25-1</option>
+                                <option value="ЭЛ-23">ЭЛ-23</option>
+                                <option value="ЭЛ-24-Ц">ЭЛ-24-Ц</option>
+                                <option value="ЭЛ-25-Ц">ЭЛ-25-Ц</option>
+                                <option value="ЭЛТ-25-Ц">ЭЛТ-25-Ц</option>
+                            </select>
+                        </div>
                         <div class="col-12">
                             <label for="phone" class="form-label">Телефон <span id="phone_required_mark" style="display:none;">*</span></label>
                             <input type="tel" class="form-control phone-mask" id="phone" name="phone" value="{{ phone or '' }}" placeholder="+7 (___) ___-__-__">
@@ -77,6 +191,7 @@ function updateFormFields(){
     const t=document.querySelector('input[name="user_type"]:checked').value;
     document.getElementById('organization_field').style.display=t==='circle_admin'?'':'none';
     document.getElementById('document_field').style.display=t==='circle_admin'?'':'none';
+    document.getElementById('group_field').style.display=t==='circle_admin'?'none':'';
     document.getElementById('phone_required_mark').style.display=t==='circle_admin'?'':'none';
 }
 document.querySelectorAll('input[name="user_type"]').forEach(r=>r.addEventListener('change',updateFormFields));

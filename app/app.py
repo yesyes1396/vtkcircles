@@ -1,10 +1,11 @@
 import os
 from flask import Flask, render_template, request, redirect, url_for, flash, jsonify, session, send_from_directory
 from flask_login import LoginManager, login_user, logout_user, login_required, current_user
+from flask_socketio import SocketIO, emit, join_room, disconnect
 try:
-    from .models import db, User, Course, enrollment, Review, ReviewVote, Complaint, EnrollmentRequest, Notification
+    from .models import db, User, Course, enrollment, Review, ReviewVote, Complaint, EnrollmentRequest, Notification, SiteSettings
 except ImportError:
-    from models import db, User, Course, enrollment, Review, ReviewVote, Complaint, EnrollmentRequest, Notification
+    from models import db, User, Course, enrollment, Review, ReviewVote, Complaint, EnrollmentRequest, Notification, SiteSettings
 from datetime import datetime, timedelta, date
 from functools import wraps
 from werkzeug.utils import secure_filename
@@ -39,6 +40,7 @@ os.makedirs(os.path.join(app.config['UPLOAD_FOLDER'], 'avatars'), exist_ok=True)
 os.makedirs(os.path.join(app.config['UPLOAD_FOLDER'], 'courses'), exist_ok=True)
 os.makedirs(os.path.join(app.config['UPLOAD_FOLDER'], 'courses', 'gallery'), exist_ok=True)
 os.makedirs(os.path.join(app.config['UPLOAD_FOLDER'], 'admin_documents'), exist_ok=True)
+os.makedirs(os.path.join(app.config['UPLOAD_FOLDER'], 'site'), exist_ok=True)
 
 ALLOWED_EXTENSIONS = {'png', 'jpg', 'jpeg', 'gif', 'webp'}
 
@@ -53,9 +55,28 @@ login_manager.login_view = 'login'
 login_manager.login_message = 'Пожалуйста, войдите в систему.'
 login_manager.login_message_category = 'info'
 
+# Инициализация Socket.IO для real-time уведомлений
+socketio = SocketIO(app, cors_allowed_origins="*")
+
 @login_manager.user_loader
 def load_user(user_id):
     return User.query.get(int(user_id))
+
+
+# ==================== Socket.IO обработчики для real-time уведомлений ====================
+@socketio.on('connect')
+def handle_connect():
+    """Обработчик подключения пользователя к WebSocket."""
+    if current_user.is_authenticated:
+        # Присоединяем пользователя к его личной комнате уведомлений
+        join_room(f'user_{current_user.id}')
+        emit('connection_response', {'data': 'Connected'})
+
+
+@socketio.on('disconnect')
+def handle_disconnect():
+    """Обработчик отключения пользователя от WebSocket."""
+    pass
 
 
 @app.context_processor
@@ -65,6 +86,15 @@ def inject_notification_count():
         count = Notification.query.filter_by(user_id=current_user.id, read_at=None).count()
         return dict(unread_notifications_count=count)
     return dict(unread_notifications_count=0)
+
+
+@app.context_processor
+def inject_site_settings():
+    """Загрузка настроек сайта для всех шаблонов"""
+    site_settings = SiteSettings.query.first()
+    if not site_settings:
+        site_settings = SiteSettings()
+    return dict(site_settings=site_settings)
 
 
 # ==================== Проверка блокировки перед каждым запросом ====================
@@ -101,12 +131,22 @@ def circle_admin_required(f):
 
 
 def notify(user_id, kind, title, message=None, link_url=None):
-    """Создать уведомление для пользователя."""
+    """Создать уведомление для пользователя и отправить в real-time."""
     if user_id is None:
         return
     n = Notification(user_id=user_id, kind=kind, title=title, message=message, link_url=link_url)
     db.session.add(n)
     db.session.commit()
+    
+    # Отправляем уведомление через WebSocket в real-time
+    socketio.emit('new_notification', {
+        'id': n.id,
+        'kind': kind,
+        'title': title,
+        'message': message,
+        'link_url': link_url,
+        'created_at': n.created_at.isoformat()
+    }, room=f'user_{user_id}')
 
 
 # ==================== Вспомогательные функции для загрузок ====================
@@ -480,7 +520,7 @@ def vote_review(review_id):
 
 
 # ==================== Запись на кружок (заявка) ====================
-@app.route('/enroll/<int:course_id>', methods=['POST'])
+@app.route('/enroll/<int:course_id>', methods=['GET', 'POST'])
 @login_required
 def enroll_course(course_id):
     """Подать заявку на запись в кружок (одобряет админ кружка)"""
@@ -511,7 +551,29 @@ def enroll_course(course_id):
         flash('Ваша заявка уже на рассмотрении.', 'info')
         return redirect(url_for('course_detail', course_id=course_id))
     
-    req = EnrollmentRequest(user_id=current_user.id, course_id=course_id)
+    if request.method == 'GET':
+        # Показываем форму с анкетой
+        return render_template('enrollment_form.html', course=course)
+    
+    # Обработка POST запроса (сохранение анкеты и создание заявки)
+    experience = sanitize_input(request.form.get('experience', ''))
+    motivation = sanitize_input(request.form.get('motivation', ''))
+    notes = sanitize_input(request.form.get('notes', ''))
+    
+    # Валидация обязательных полей анкеты
+    if not experience or not motivation:
+        flash('Пожалуйста, заполните все обязательные поля анкеты.', 'danger')
+        return render_template('enrollment_form.html', course=course, 
+                             experience=experience, motivation=motivation, notes=notes)
+    
+    # Создание заявки с анкетой
+    req = EnrollmentRequest(
+        user_id=current_user.id, 
+        course_id=course_id,
+        questionnaire_experience=experience,
+        questionnaire_motivation=motivation,
+        questionnaire_notes=notes
+    )
     db.session.add(req)
     db.session.commit()
     notify(current_user.id, 'enrollment_pending',
@@ -581,10 +643,13 @@ def profile():
         last_name = request.form.get('last_name', '').strip()
         birth_date_str = request.form.get('birth_date', '').strip()
         phone = request.form.get('phone', '').strip()
+        group = request.form.get('group', '').strip() if current_user.user_type == 'student' else None
         
         current_user.first_name = first_name
         current_user.last_name = last_name
         current_user.phone = phone
+        if group is not None:
+            current_user.group = group
         
         if birth_date_str:
             try:
@@ -683,6 +748,42 @@ def inbox_open(notification_id):
     return redirect(url_for('inbox'))
 
 
+@app.route('/api/notifications/count')
+@login_required
+def api_notifications_count():
+    """API endpoint для получения количества непрочитанных уведомлений"""
+    count = Notification.query.filter_by(user_id=current_user.id, read_at=None).count()
+    return jsonify({'count': count})
+
+
+@app.route('/inbox/<int:notification_id>/delete', methods=['POST'])
+@login_required
+def delete_notification(notification_id):
+    """Удалить конкретное уведомление"""
+    n = Notification.query.get_or_404(notification_id)
+    if n.user_id != current_user.id:
+        flash('Нет доступа.', 'danger')
+        return redirect(url_for('inbox'))
+    
+    db.session.delete(n)
+    db.session.commit()
+    flash('Уведомление удалено.', 'info')
+    return redirect(url_for('inbox'))
+
+
+@app.route('/inbox/delete-all', methods=['POST'])
+@login_required
+def delete_all_notifications():
+    """Удалить все уведомления пользователя"""
+    count = Notification.query.filter_by(user_id=current_user.id).delete()
+    db.session.commit()
+    if count:
+        flash(f'Удалено {count} уведомлений.', 'success')
+    else:
+        flash('Нет уведомлений для удаления.', 'info')
+    return redirect(url_for('inbox'))
+
+
 # ==================== Публичный профиль пользователя ====================
 @app.route('/user/<int:user_id>')
 def user_public_profile(user_id):
@@ -738,6 +839,7 @@ def register():
         last_name = sanitize_input(request.form.get('last_name', ''))
         user_type = request.form.get('user_type', 'student').strip()
         birth_date_str = request.form.get('birth_date', '').strip()
+        group = sanitize_input(request.form.get('group', ''))
         organization = sanitize_input(request.form.get('organization', ''))
         phone = sanitize_input(request.form.get('phone', ''))
         
@@ -747,7 +849,7 @@ def register():
             return render_template('register.html',
                 username=username, email=email, first_name=first_name,
                 last_name=last_name, birth_date=birth_date_str,
-                organization=organization, user_type=user_type, phone=phone)
+                organization=organization, user_type=user_type, phone=phone, group=group)
 
         # Валидация типа пользователя
         if user_type not in ['student', 'circle_admin']:
@@ -767,6 +869,10 @@ def register():
         # Имя и фамилия обязательны
         if not first_name or not last_name:
             return reg_error('Имя и фамилия обязательны.')
+        
+        # Валидация группы для студентов
+        if user_type == 'student' and not group:
+            return reg_error('Пожалуйста, укажите группу.')
         
         # Валидация пароля на устойчивость
         password_valid, password_msg = validate_password_strength(password)
@@ -819,6 +925,7 @@ def register():
             last_name=last_name,
             birth_date=birth_date,
             phone=phone,
+            group=group if user_type == 'student' else None,
             contact_document=contact_document_path,
             user_type=user_type,
             is_verified=False,
@@ -1172,6 +1279,53 @@ def admin_delete_course(course_id):
     flash(f'Кружок "{course_name}" успешно удален.', 'success')
     return redirect(url_for('admin_dashboard'))
 
+# ==================== Настройки сайта (логотип, баннер) ====================
+@app.route('/admin/settings', methods=['GET', 'POST'])
+@admin_required
+def admin_settings():
+    """Управление настройками сайта (логотип, баннер)"""
+    site_settings = SiteSettings.query.first()
+    if not site_settings:
+        site_settings = SiteSettings()
+        db.session.add(site_settings)
+        db.session.commit()
+    
+    if request.method == 'POST':
+        # Загрузка логотипа
+        if 'logo' in request.files:
+            file = request.files['logo']
+            if file and file.filename:
+                # Удалить старый логотип если есть
+                if site_settings.logo:
+                    delete_file_if_exists(site_settings.logo)
+                
+                logo_path = save_upload_file(file, 'site')
+                if logo_path:
+                    site_settings.logo = logo_path
+                    flash('Логотип успешно загружен.', 'success')
+                else:
+                    flash('Неверный формат файла логотипа.', 'warning')
+        
+        # Загрузка баннера
+        if 'banner' in request.files:
+            file = request.files['banner']
+            if file and file.filename:
+                # Удалить старый баннер если есть
+                if site_settings.banner:
+                    delete_file_if_exists(site_settings.banner)
+                
+                banner_path = save_upload_file(file, 'site')
+                if banner_path:
+                    site_settings.banner = banner_path
+                    flash('Баннер успешно загружен.', 'success')
+                else:
+                    flash('Неверный формат файла баннера.', 'warning')
+        
+        db.session.commit()
+        return redirect(url_for('admin_settings'))
+    
+    return render_template('admin/settings.html', site_settings=site_settings)
+
 # ==================== Просмотр участников и заявок кружка ====================
 @app.route('/course/<int:course_id>/enrollments')
 @login_required
@@ -1227,6 +1381,18 @@ def init_db():
     """Инициализация базы данных"""
     db.create_all()
     print('База данных инициализирована.')
+
+@app.cli.command()
+def reset_admin():
+    """Сброс пароля администратора на 'admin123'"""
+    with app.app_context():
+        admin = User.query.filter_by(username='mainadmin').first()
+        if admin:
+            admin.set_password('admin123')
+            db.session.commit()
+            print(f'✓ Пароль администратора сброшен на: admin123')
+        else:
+            print('✗ Администратор не найден')
 
 @app.cli.command()
 def seed_db():
@@ -1888,4 +2054,4 @@ if __name__ == '__main__':
     host = os.environ.get('APP_HOST', '0.0.0.0')
     port = int(os.environ.get('APP_PORT', '5000'))
     debug = os.environ.get('FLASK_DEBUG', '1') == '1'
-    app.run(debug=debug, host=host, port=port)
+    socketio.run(app, debug=debug, host=host, port=port, allow_unsafe_werkzeug=debug)

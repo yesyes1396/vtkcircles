@@ -22,6 +22,7 @@
                     <tr>
                         <th style="width:48px"></th>
                         <th>Студент</th>
+                        <th>Группа</th>
                         <th>Возраст</th>
                         <th>Телефон</th>
                         <th>Email</th>
@@ -37,11 +38,15 @@
                             <a href="{{ url_for('user_public_profile', user_id=r.user.id) }}"><strong>{{ r.user.username }}</strong></a><br>
                             <small class="text-muted">{{ r.user.first_name or '' }} {{ r.user.last_name or '' }}</small>
                         </td>
+                        <td>{{ r.user.group or '—' }}</td>
                         <td>{% if r.user.age %}{{ r.user.age }} лет{% else %}—{% endif %}</td>
                         <td>{% if r.user.phone %}<a href="tel:{{ r.user.phone }}">{{ r.user.phone }}</a>{% else %}<span class="text-muted">—</span>{% endif %}</td>
                         <td><a href="mailto:{{ r.user.email }}">{{ r.user.email }}</a></td>
                         <td><small>{{ r.created_at.strftime('%d.%m.%Y %H:%M') }}</small></td>
                         <td class="text-end text-nowrap">
+                            <button class="btn btn-info btn-sm" data-bs-toggle="modal" data-bs-target="#modalQuestionnaire{{ r.id }}">
+                                <i class="fas fa-eye"></i> Анкета
+                            </button>
                             <form method="POST" action="{{ url_for('approve_enrollment', request_id=r.id) }}" class="d-inline">
                                 <input type="hidden" name="_csrf_token" value="{{ csrf_token() }}">
                                 <button class="btn btn-success btn-sm"><i class="fas fa-check"></i> Одобрить</button>
@@ -75,6 +80,7 @@
                     <tr>
                         <th style="width:48px"></th>
                         <th>Студент</th>
+                        <th>Группа</th>
                         <th>Возраст</th>
                         <th>Телефон</th>
                         <th>Email</th>
@@ -89,6 +95,7 @@
                             <a href="{{ url_for('user_public_profile', user_id=s.id) }}"><strong>{{ s.username }}</strong></a><br>
                             <small class="text-muted">{{ s.first_name or '' }} {{ s.last_name or '' }}</small>
                         </td>
+                        <td>{{ s.group or '—' }}</td>
                         <td>{% if s.age %}{{ s.age }} лет{% else %}—{% endif %}</td>
                         <td>{% if s.phone %}<a href="tel:{{ s.phone }}">{{ s.phone }}</a>{% else %}<span class="text-muted">—</span>{% endif %}</td>
                         <td><a href="mailto:{{ s.email }}">{{ s.email }}</a></td>
@@ -108,4 +115,72 @@
         {% endif %}
     </div>
 </div>
+
+{# ==================== Модальные окна с анкетами ==================== #}
+{% for r in pending_requests %}
+<div class="modal fade" id="modalQuestionnaire{{ r.id }}" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title"><i class="fas fa-clipboard-list"></i> Анкета — {{ r.user.username }}</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div class="mb-4">
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <div><strong>Студент:</strong> {{ r.user.first_name }} {{ r.user.last_name }}</div>
+                        </div>
+                        <div class="col-md-6">
+                            <div><strong>Группа:</strong> {{ r.user.group or '—' }}</div>
+                        </div>
+                        <div class="col-md-6">
+                            <div><strong>Возраст:</strong> {% if r.user.age %}{{ r.user.age }} лет{% else %}—{% endif %}</div>
+                        </div>
+                        <div class="col-md-6">
+                            <div><strong>Email:</strong> {{ r.user.email }}</div>
+                        </div>
+                    </div>
+                </div>
+                
+                <hr>
+                
+                <div class="mb-4">
+                    <h6 class="mb-2"><i class="fas fa-star"></i> Опыт в области</h6>
+                    <div class="bg-light p-3 rounded">
+                        {% if r.questionnaire_experience %}
+                            {{ r.questionnaire_experience | safe }}
+                        {% else %}
+                            <span class="text-muted">Не заполнено</span>
+                        {% endif %}
+                    </div>
+                </div>
+                
+                <div class="mb-4">
+                    <h6 class="mb-2"><i class="fas fa-target"></i> Мотивация и цели</h6>
+                    <div class="bg-light p-3 rounded">
+                        {% if r.questionnaire_motivation %}
+                            {{ r.questionnaire_motivation | safe }}
+                        {% else %}
+                            <span class="text-muted">Не заполнено</span>
+                        {% endif %}
+                    </div>
+                </div>
+                
+                {% if r.questionnaire_notes %}
+                <div class="mb-4">
+                    <h6 class="mb-2"><i class="fas fa-note-sticky"></i> Дополнительные заметки</h6>
+                    <div class="bg-light p-3 rounded">
+                        {{ r.questionnaire_notes | safe }}
+                    </div>
+                </div>
+                {% endif %}
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Закрыть</button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endfor %}
 {% endblock %}

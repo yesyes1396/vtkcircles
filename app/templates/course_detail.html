@@ -212,7 +212,7 @@
                 {% elif current_user.age and (current_user.age < course.min_age or current_user.age > course.max_age) %}
                     <div class="alert alert-warning py-2 mb-2">Возраст не подходит</div>
                 {% else %}
-                    <form method="POST" action="/enroll/{{ course.id }}"><input type="hidden" name="_csrf_token" value="{{ csrf_token() }}"><button type="submit" class="btn btn-primary w-100 mb-2">Подать заявку</button></form>
+                    <a href="/enroll/{{ course.id }}" class="btn btn-primary w-100 mb-2">Подать заявку</a>
                 {% endif %}
 
                 {% if current_user.is_authenticated and not current_user.is_admin and (current_user.user_type == 'circle_admin' or is_enrolled) %}

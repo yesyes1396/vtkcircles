@@ -1,6 +1,9 @@
 Flask
 Flask-SQLAlchemy
 Flask-Login
+Flask-SocketIO
+python-socketio
+python-engineio
 Werkzeug
 SQLAlchemy
 python-dotenv

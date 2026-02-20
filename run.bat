@@ -2,16 +2,16 @@
 setlocal
 cd /d "%~dp0"
 
-py --version >nul 2>&1
+py -3.12 --version >nul 2>&1
 if errorlevel 1 (
-    echo [ERROR] Python launcher not found. Install Python 3.11+.
+    echo [ERROR] Python 3.12+ not found. Install Python 3.12+.
     pause
     exit /b 1
 )
 
 if not exist ".venv\Scripts\python.exe" (
     echo Creating virtual environment...
-    py -m venv .venv
+    py -3.12 -m venv .venv
 )
 
 echo Installing dependencies...

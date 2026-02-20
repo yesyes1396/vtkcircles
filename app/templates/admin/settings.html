@@ -1,0 +1,95 @@
+{% extends "base.html" %}
+{% block title %}Настройки сайта{% endblock %}
+
+{% block content %}
+<div class="profile-header text-center mb-4">
+    <h1><i class="fas fa-sliders-h"></i> Настройки сайта</h1>
+    <p class="lead mb-0">Управление логотипом и баннером</p>
+</div>
+
+<a href="/admin/dashboard" class="btn btn-secondary mb-3"><i class="fas fa-arrow-left"></i> Назад к панели</a>
+
+<div class="row g-3">
+    <!-- Логотип -->
+    <div class="col-lg-6">
+        <div class="card">
+            <div class="card-body">
+                <h5 class="card-title mb-4"><i class="fas fa-image"></i> Логотип</h5>
+                
+                {% if site_settings.logo %}
+                <div class="mb-3">
+                    <label class="form-label">Текущий логотип:</label>
+                    <div class="border rounded p-2" style="background: var(--vtk-bg);">
+                        <img src="/{{ site_settings.logo }}" alt="Логотип" style="max-width: 200px; max-height: 100px; object-fit: contain;">
+                    </div>
+                </div>
+                {% else %}
+                <div class="alert alert-info">Логотип ещё не загружен</div>
+                {% endif %}
+                
+                <form method="POST" enctype="multipart/form-data">
+                    <div class="mb-3">
+                        <label for="logo" class="form-label">Загрузить новый логотип</label>
+                        <input type="file" class="form-control" id="logo" name="logo" accept="image/*" required>
+                        <small class="text-muted d-block mt-1">
+                            <i class="fas fa-info-circle"></i> 
+                            Форматы: PNG, JPG, GIF, WebP (макс. 16 МБ)
+                        </small>
+                    </div>
+                    <button type="submit" class="btn btn-primary w-100">
+                        <i class="fas fa-upload"></i> Загрузить логотип
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Баннер -->
+    <div class="col-lg-6">
+        <div class="card">
+            <div class="card-body">
+                <h5 class="card-title mb-4"><i class="fas fa-image"></i> Баннер главной страницы</h5>
+                
+                {% if site_settings.banner %}
+                <div class="mb-3">
+                    <label class="form-label">Текущий баннер:</label>
+                    <div class="border rounded p-2" style="background: var(--vtk-bg);">
+                        <img src="/{{ site_settings.banner }}" alt="Баннер" style="max-width: 100%; max-height: 150px; object-fit: cover; border-radius: 8px;">
+                    </div>
+                </div>
+                {% else %}
+                <div class="alert alert-info">Баннер ещё не загружен</div>
+                {% endif %}
+                
+                <form method="POST" enctype="multipart/form-data">
+                    <div class="mb-3">
+                        <label for="banner" class="form-label">Загрузить новый баннер</label>
+                        <input type="file" class="form-control" id="banner" name="banner" accept="image/*" required>
+                        <small class="text-muted d-block mt-1">
+                            <i class="fas fa-info-circle"></i> 
+                            Форматы: PNG, JPG, GIF, WebP (макс. 16 МБ)<br>
+                            Рекомендуемый размер: 1920x400px или больше
+                        </small>
+                    </div>
+                    <button type="submit" class="btn btn-primary w-100">
+                        <i class="fas fa-upload"></i> Загрузить баннер
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    .card {
+        transition: all 0.3s ease;
+    }
+    .card:hover {
+        box-shadow: 0 8px 28px rgba(17,24,39,.12);
+    }
+    .form-control:focus {
+        border-color: var(--vtk-primary);
+        box-shadow: 0 0 0 0.2rem rgba(51, 71, 184, 0.25);
+    }
+</style>
+{% endblock %}

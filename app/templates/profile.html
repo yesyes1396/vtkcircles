@@ -37,6 +37,122 @@
                         <label class="form-label">Дата рождения</label>
                         <input type="date" class="form-control" name="birth_date" value="{{ current_user.birth_date.strftime('%Y-%m-%d') if current_user.birth_date else '' }}">
                     </div>
+                    {% if current_user.user_type == 'student' %}
+                    <div class="mb-3">
+                        <label class="form-label">Группа</label>
+                        <select class="form-control" name="group">
+                            <option value="">— Не выбрано —</option>
+                            <option value="А-23-1" {% if current_user.group == 'А-23-1' %}selected{% endif %}>А-23-1</option>
+                            <option value="А-23-2" {% if current_user.group == 'А-23-2' %}selected{% endif %}>А-23-2</option>
+                            <option value="А-24-1" {% if current_user.group == 'А-24-1' %}selected{% endif %}>А-24-1</option>
+                            <option value="А-24-2" {% if current_user.group == 'А-24-2' %}selected{% endif %}>А-24-2</option>
+                            <option value="А-24-3" {% if current_user.group == 'А-24-3' %}selected{% endif %}>А-24-3</option>
+                            <option value="А-25-1" {% if current_user.group == 'А-25-1' %}selected{% endif %}>А-25-1</option>
+                            <option value="А-25-2" {% if current_user.group == 'А-25-2' %}selected{% endif %}>А-25-2</option>
+                            <option value="АУП-23-Ц" {% if current_user.group == 'АУП-23-Ц' %}selected{% endif %}>АУП-23-Ц</option>
+                            <option value="АУП-25" {% if current_user.group == 'АУП-25' %}selected{% endif %}>АУП-25</option>
+                            <option value="ВТ-23-11" {% if current_user.group == 'ВТ-23-11' %}selected{% endif %}>ВТ-23-11</option>
+                            <option value="ВТ-24-П" {% if current_user.group == 'ВТ-24-П' %}selected{% endif %}>ВТ-24-П</option>
+                            <option value="ВТ-25-Т" {% if current_user.group == 'ВТ-25-Т' %}selected{% endif %}>ВТ-25-Т</option>
+                            <option value="ГЕО-23" {% if current_user.group == 'ГЕО-23' %}selected{% endif %}>ГЕО-23</option>
+                            <option value="ГЕО-24" {% if current_user.group == 'ГЕО-24' %}selected{% endif %}>ГЕО-24</option>
+                            <option value="ГЕО-24-Ц" {% if current_user.group == 'ГЕО-24-Ц' %}selected{% endif %}>ГЕО-24-Ц</option>
+                            <option value="ГЕО-25-1" {% if current_user.group == 'ГЕО-25-1' %}selected{% endif %}>ГЕО-25-1</option>
+                            <option value="ГЕО-25-2" {% if current_user.group == 'ГЕО-25-2' %}selected{% endif %}>ГЕО-25-2</option>
+                            <option value="ДИЗ-23" {% if current_user.group == 'ДИЗ-23' %}selected{% endif %}>ДИЗ-23</option>
+                            <option value="ДИЗ-24" {% if current_user.group == 'ДИЗ-24' %}selected{% endif %}>ДИЗ-24</option>
+                            <option value="ДИЗ-25" {% if current_user.group == 'ДИЗ-25' %}selected{% endif %}>ДИЗ-25</option>
+                            <option value="ДС-24-Ц" {% if current_user.group == 'ДС-24-Ц' %}selected{% endif %}>ДС-24-Ц</option>
+                            <option value="ДС-25" {% if current_user.group == 'ДС-25' %}selected{% endif %}>ДС-25</option>
+                            <option value="ДС-25-Т" {% if current_user.group == 'ДС-25-Т' %}selected{% endif %}>ДС-25-Т</option>
+                            <option value="МВТ-24" {% if current_user.group == 'МВТ-24' %}selected{% endif %}>МВТ-24</option>
+                            <option value="МВТ-25" {% if current_user.group == 'МВТ-25' %}selected{% endif %}>МВТ-25</option>
+                            <option value="МГЗ-24" {% if current_user.group == 'МГЗ-24' %}selected{% endif %}>МГЗ-24</option>
+                            <option value="МГЗ-25" {% if current_user.group == 'МГЗ-25' %}selected{% endif %}>МГЗ-25</option>
+                            <option value="МК-23" {% if current_user.group == 'МК-23' %}selected{% endif %}>МК-23</option>
+                            <option value="МК-25" {% if current_user.group == 'МК-25' %}selected{% endif %}>МК-25</option>
+                            <option value="МП-23" {% if current_user.group == 'МП-23' %}selected{% endif %}>МП-23</option>
+                            <option value="МП-24-Ц" {% if current_user.group == 'МП-24-Ц' %}selected{% endif %}>МП-24-Ц</option>
+                            <option value="МП-25-Ц" {% if current_user.group == 'МП-25-Ц' %}selected{% endif %}>МП-25-Ц</option>
+                            <option value="МПО-24" {% if current_user.group == 'МПО-24' %}selected{% endif %}>МПО-24</option>
+                            <option value="МС-23" {% if current_user.group == 'МС-23' %}selected{% endif %}>МС-23</option>
+                            <option value="МС-24-П" {% if current_user.group == 'МС-24-П' %}selected{% endif %}>МС-24-П</option>
+                            <option value="МС-24-Т" {% if current_user.group == 'МС-24-Т' %}selected{% endif %}>МС-24-Т</option>
+                            <option value="МС-24-Ц" {% if current_user.group == 'МС-24-Ц' %}selected{% endif %}>МС-24-Ц</option>
+                            <option value="МС-25-П" {% if current_user.group == 'МС-25-П' %}selected{% endif %}>МС-25-П</option>
+                            <option value="МС-25-Т" {% if current_user.group == 'МС-25-Т' %}selected{% endif %}>МС-25-Т</option>
+                            <option value="МС-25-Ц" {% if current_user.group == 'МС-25-Ц' %}selected{% endif %}>МС-25-Ц</option>
+                            <option value="МХТ-24-Ц" {% if current_user.group == 'МХТ-24-Ц' %}selected{% endif %}>МХТ-24-Ц</option>
+                            <option value="МХТ-23-1" {% if current_user.group == 'МХТ-23-1' %}selected{% endif %}>МХТ-23-1</option>
+                            <option value="МХТ-23-2" {% if current_user.group == 'МХТ-23-2' %}selected{% endif %}>МХТ-23-2</option>
+                            <option value="МХТ-25-Ц" {% if current_user.group == 'МХТ-25-Ц' %}selected{% endif %}>МХТ-25-Ц</option>
+                            <option value="ОПИ-25" {% if current_user.group == 'ОПИ-25' %}selected{% endif %}>ОПИ-25</option>
+                            <option value="ПАР-25" {% if current_user.group == 'ПАР-25' %}selected{% endif %}>ПАР-25</option>
+                            <option value="ПАР-25-11-Ц" {% if current_user.group == 'ПАР-25-11-Ц' %}selected{% endif %}>ПАР-25-11-Ц</option>
+                            <option value="ПАР-25-Ц" {% if current_user.group == 'ПАР-25-Ц' %}selected{% endif %}>ПАР-25-Ц</option>
+                            <option value="РПО-23-1" {% if current_user.group == 'РПО-23-1' %}selected{% endif %}>РПО-23-1</option>
+                            <option value="РПО-23-2" {% if current_user.group == 'РПО-23-2' %}selected{% endif %}>РПО-23-2</option>
+                            <option value="РПО-23-3" {% if current_user.group == 'РПО-23-3' %}selected{% endif %}>РПО-23-3</option>
+                            <option value="РПО-24-1" {% if current_user.group == 'РПО-24-1' %}selected{% endif %}>РПО-24-1</option>
+                            <option value="РПО-24-2" {% if current_user.group == 'РПО-24-2' %}selected{% endif %}>РПО-24-2</option>
+                            <option value="РПО-24-3" {% if current_user.group == 'РПО-24-3' %}selected{% endif %}>РПО-24-3</option>
+                            <option value="РПО-25-1" {% if current_user.group == 'РПО-25-1' %}selected{% endif %}>РПО-25-1</option>
+                            <option value="РПО-25-2" {% if current_user.group == 'РПО-25-2' %}selected{% endif %}>РПО-25-2</option>
+                            <option value="СД-23" {% if current_user.group == 'СД-23' %}selected{% endif %}>СД-23</option>
+                            <option value="СД-24-Ц" {% if current_user.group == 'СД-24-Ц' %}selected{% endif %}>СД-24-Ц</option>
+                            <option value="СД-25-Ц" {% if current_user.group == 'СД-25-Ц' %}selected{% endif %}>СД-25-Ц</option>
+                            <option value="СДС-23" {% if current_user.group == 'СДС-23' %}selected{% endif %}>СДС-23</option>
+                            <option value="СДС-25" {% if current_user.group == 'СДС-25' %}selected{% endif %}>СДС-25</option>
+                            <option value="ТИС-24" {% if current_user.group == 'ТИС-24' %}selected{% endif %}>ТИС-24</option>
+                            <option value="ТИС-25" {% if current_user.group == 'ТИС-25' %}selected{% endif %}>ТИС-25</option>
+                            <option value="ТИС-25-11" {% if current_user.group == 'ТИС-25-11' %}selected{% endif %}>ТИС-25-11</option>
+                            <option value="ТМ-23-1" {% if current_user.group == 'ТМ-23-1' %}selected{% endif %}>ТМ-23-1</option>
+                            <option value="ТМ-23-2" {% if current_user.group == 'ТМ-23-2' %}selected{% endif %}>ТМ-23-2</option>
+                            <option value="ТМ-23-П" {% if current_user.group == 'ТМ-23-П' %}selected{% endif %}>ТМ-23-П</option>
+                            <option value="ТМ-24-1" {% if current_user.group == 'ТМ-24-1' %}selected{% endif %}>ТМ-24-1</option>
+                            <option value="ТМ-24-2" {% if current_user.group == 'ТМ-24-2' %}selected{% endif %}>ТМ-24-2</option>
+                            <option value="ТМ-24-Ж" {% if current_user.group == 'ТМ-24-Ж' %}selected{% endif %}>ТМ-24-Ж</option>
+                            <option value="ТМ-24-П" {% if current_user.group == 'ТМ-24-П' %}selected{% endif %}>ТМ-24-П</option>
+                            <option value="ТМ-24-Ц" {% if current_user.group == 'ТМ-24-Ц' %}selected{% endif %}>ТМ-24-Ц</option>
+                            <option value="ТМ-25-1" {% if current_user.group == 'ТМ-25-1' %}selected{% endif %}>ТМ-25-1</option>
+                            <option value="ТМ-25-2" {% if current_user.group == 'ТМ-25-2' %}selected{% endif %}>ТМ-25-2</option>
+                            <option value="ТМ-25-3" {% if current_user.group == 'ТМ-25-3' %}selected{% endif %}>ТМ-25-3</option>
+                            <option value="ТМ-25-5" {% if current_user.group == 'ТМ-25-5' %}selected{% endif %}>ТМ-25-5</option>
+                            <option value="ТМ-25-П" {% if current_user.group == 'ТМ-25-П' %}selected{% endif %}>ТМ-25-П</option>
+                            <option value="ТМ-25-Т" {% if current_user.group == 'ТМ-25-Т' %}selected{% endif %}>ТМ-25-Т</option>
+                            <option value="ТМ-25-Т-2" {% if current_user.group == 'ТМ-25-Т-2' %}selected{% endif %}>ТМ-25-Т-2</option>
+                            <option value="ТС-23-П" {% if current_user.group == 'ТС-23-П' %}selected{% endif %}>ТС-23-П</option>
+                            <option value="ТС-24" {% if current_user.group == 'ТС-24' %}selected{% endif %}>ТС-24</option>
+                            <option value="ТС-24-Т" {% if current_user.group == 'ТС-24-Т' %}selected{% endif %}>ТС-24-Т</option>
+                            <option value="ТС-25-Т" {% if current_user.group == 'ТС-25-Т' %}selected{% endif %}>ТС-25-Т</option>
+                            <option value="ТС-25-Ц" {% if current_user.group == 'ТС-25-Ц' %}selected{% endif %}>ТС-25-Ц</option>
+                            <option value="ТСА-23" {% if current_user.group == 'ТСА-23' %}selected{% endif %}>ТСА-23</option>
+                            <option value="ТСА-24-1" {% if current_user.group == 'ТСА-24-1' %}selected{% endif %}>ТСА-24-1</option>
+                            <option value="ТСА-24-2" {% if current_user.group == 'ТСА-24-2' %}selected{% endif %}>ТСА-24-2</option>
+                            <option value="ТСА-25-1" {% if current_user.group == 'ТСА-25-1' %}selected{% endif %}>ТСА-25-1</option>
+                            <option value="ТСА-25-2" {% if current_user.group == 'ТСА-25-2' %}selected{% endif %}>ТСА-25-2</option>
+                            <option value="ТСТП-23" {% if current_user.group == 'ТСТП-23' %}selected{% endif %}>ТСТП-23</option>
+                            <option value="ТСТП-24" {% if current_user.group == 'ТСТП-24' %}selected{% endif %}>ТСТП-24</option>
+                            <option value="ТСТП-25" {% if current_user.group == 'ТСТП-25' %}selected{% endif %}>ТСТП-25</option>
+                            <option value="ТТ-23-Ц" {% if current_user.group == 'ТТ-23-Ц' %}selected{% endif %}>ТТ-23-Ц</option>
+                            <option value="ТТ-25-11" {% if current_user.group == 'ТТ-25-11' %}selected{% endif %}>ТТ-25-11</option>
+                            <option value="ТЭМ-24-Ц" {% if current_user.group == 'ТЭМ-24-Ц' %}selected{% endif %}>ТЭМ-24-Ц</option>
+                            <option value="ТЭМ-23-1" {% if current_user.group == 'ТЭМ-23-1' %}selected{% endif %}>ТЭМ-23-1</option>
+                            <option value="ТЭМ-23-2" {% if current_user.group == 'ТЭМ-23-2' %}selected{% endif %}>ТЭМ-23-2</option>
+                            <option value="ТЭМ-24" {% if current_user.group == 'ТЭМ-24' %}selected{% endif %}>ТЭМ-24</option>
+                            <option value="ТЭМ-25" {% if current_user.group == 'ТЭМ-25' %}selected{% endif %}>ТЭМ-25</option>
+                            <option value="УА-23-1" {% if current_user.group == 'УА-23-1' %}selected{% endif %}>УА-23-1</option>
+                            <option value="УА-23-2" {% if current_user.group == 'УА-23-2' %}selected{% endif %}>УА-23-2</option>
+                            <option value="УА-24" {% if current_user.group == 'УА-24' %}selected{% endif %}>УА-24</option>
+                            <option value="УА-24-Ц" {% if current_user.group == 'УА-24-Ц' %}selected{% endif %}>УА-24-Ц</option>
+                            <option value="УА-25-1" {% if current_user.group == 'УА-25-1' %}selected{% endif %}>УА-25-1</option>
+                            <option value="ЭЛ-23" {% if current_user.group == 'ЭЛ-23' %}selected{% endif %}>ЭЛ-23</option>
+                            <option value="ЭЛ-24-Ц" {% if current_user.group == 'ЭЛ-24-Ц' %}selected{% endif %}>ЭЛ-24-Ц</option>
+                            <option value="ЭЛ-25-Ц" {% if current_user.group == 'ЭЛ-25-Ц' %}selected{% endif %}>ЭЛ-25-Ц</option>
+                            <option value="ЭЛТ-25-Ц" {% if current_user.group == 'ЭЛТ-25-Ц' %}selected{% endif %}>ЭЛТ-25-Ц</option>
+                        </select>
+                    </div>
+                    {% endif %}
                     <div class="mb-3">
                         <label class="form-label">Телефон</label>
                         <input type="tel" class="form-control phone-mask" name="phone" value="{{ current_user.phone or '' }}" placeholder="+7 (___) ___-__-__">
@@ -60,6 +176,7 @@
                     <div class="col-md-6"><div class="profile-info"><strong>Дата рождения</strong><br>{% if current_user.birth_date %}{{ current_user.birth_date.strftime('%d.%m.%Y') }}{% else %}<span class="text-muted">Не указана</span>{% endif %}</div></div>
                     <div class="col-md-6"><div class="profile-info"><strong>Возраст</strong><br>{% if current_user.age %}{{ current_user.age }} лет{% else %}<span class="text-muted">—</span>{% endif %}</div></div>
                     <div class="col-md-6"><div class="profile-info"><strong>{% if profile_courses_are_led %}Ведёт секций{% else %}Записей{% endif %}</strong><br>{{ profile_courses|length }}</div></div>
+                    {% if current_user.user_type == 'student' %}<div class="col-md-6"><div class="profile-info"><strong>Группа</strong><br>{{ current_user.group or '—' }}</div></div>{% endif %}
                 </div>
             </div>
         </div>

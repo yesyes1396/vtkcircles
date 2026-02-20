@@ -7,12 +7,20 @@
         <a href="/profile" class="btn btn-outline-secondary btn-sm"><i class="fas fa-arrow-left"></i> В кабинет</a>
         <h4 class="mb-0"><i class="fas fa-bell"></i> Уведомления</h4>
     </div>
-    {% if notifications and notifications|selectattr('read_at', 'none')|list|length > 0 %}
-    <form method="POST" action="{{ url_for('inbox_read_all') }}" class="mb-0">
-        <input type="hidden" name="_csrf_token" value="{{ csrf_token() }}">
-        <button type="submit" class="btn btn-outline-primary btn-sm"><i class="fas fa-check-double"></i> Прочитать все</button>
-    </form>
-    {% endif %}
+    <div class="d-flex gap-2">
+        {% if notifications and notifications|selectattr('read_at', 'none')|list|length > 0 %}
+        <form method="POST" action="{{ url_for('inbox_read_all') }}" class="mb-0">
+            <input type="hidden" name="_csrf_token" value="{{ csrf_token() }}">
+            <button type="submit" class="btn btn-outline-primary btn-sm"><i class="fas fa-check-double"></i> Прочитать все</button>
+        </form>
+        {% endif %}
+        {% if notifications %}
+        <form method="POST" action="{{ url_for('delete_all_notifications') }}" class="mb-0" onsubmit="return confirm('Удалить все уведомления?');">
+            <input type="hidden" name="_csrf_token" value="{{ csrf_token() }}">
+            <button type="submit" class="btn btn-outline-danger btn-sm"><i class="fas fa-trash"></i> Удалить все</button>
+        </form>
+        {% endif %}
+    </div>
 </div>
 
 {% if notifications %}
@@ -43,9 +51,13 @@
             {% if n.message %}<div class="text-muted small mt-0">{{ n.message }}</div>{% endif %}
             <small class="text-muted">{{ n.created_at.strftime('%d.%m.%Y %H:%M') }}</small>
         </div>
-        <span class="d-flex align-items-center gap-1">
+        <span class="d-flex align-items-center gap-2" onclick="event.stopPropagation();">
             {% if not n.read_at %}<span class="badge bg-primary rounded-pill">новое</span>{% endif %}
             {% if n.link_url %}<i class="fas fa-external-link-alt small text-muted" title="Перейти к событию"></i>{% endif %}
+            <form method="POST" action="{{ url_for('delete_notification', notification_id=n.id) }}" onclick="event.stopPropagation();" style="display: inline;">
+                <input type="hidden" name="_csrf_token" value="{{ csrf_token() }}">
+                <button type="submit" class="btn btn-close btn-sm" title="Удалить уведомление" style="padding: 0; width: auto; height: auto;"></button>
+            </form>
         </span>
     </a>
     {% endfor %}

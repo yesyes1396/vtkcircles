@@ -126,7 +126,13 @@ a:hover{color:var(--vtk-primary-d);}
 .hero{
     background:linear-gradient(125deg,var(--vtk-primary) 0%,var(--vtk-primary-d) 70%,#4f66e0 100%);
     color:#fff;padding:46px 24px;border-radius:20px;box-shadow:var(--vtk-shadow);margin-bottom:26px;
+    position:relative;background-size:cover;background-position:center;
 }
+.hero::before{
+    content:'';position:absolute;top:0;left:0;right:0;bottom:0;
+    background:rgba(0,0,0,.45);border-radius:20px;z-index:0;
+}
+.hero h1,.hero p,.hero .btn{position:relative;z-index:1;}
 .hero h1{font-weight:700;}
 
 /* ---------- Search form ---------- */

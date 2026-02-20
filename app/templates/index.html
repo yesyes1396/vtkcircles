@@ -2,8 +2,13 @@
 {% block title %}{{ app_name }} — Портал секций{% endblock %}
 
 {% block content %}
-<div class="hero text-center">
-    <h1><i class="fas fa-star"></i> {{ app_name }}</h1>
+<div class="hero text-center" {% if site_settings.banner %}style="background-image: url('/{{ site_settings.banner }}'); background-size: cover; background-position: center;"{% endif %}>
+    <h1> {% if site_settings.logo %}
+                    <img src="/{{ site_settings.logo }}" alt="{{ app_name }}" style="height: 60px; object-fit: contain; margin-top: -10px;">
+                {% else %}
+                    <img src="/app/static/Images/channels4_profile.png" alt="{{ app_name }}" style="height: 40px; object-fit: contain;">
+                {% endif %}
+                {{ app_name }}</h1>
     <p class="lead">Каталог секций и кружков для студентов и школьников</p>
     {% if not current_user.is_authenticated %}
         <a href="/register" class="btn btn-light btn-lg"><i class="fas fa-user-plus"></i> Присоединиться</a>

@@ -1,0 +1,87 @@
+{% extends "base.html" %}
+{% block title %}Запись на кружок — {{ course.name }}{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-lg-8">
+        <div class="card">
+            <div class="card-body p-4">
+                <a href="{{ url_for('course_detail', course_id=course.id) }}" class="btn btn-outline-secondary btn-sm mb-3">
+                    <i class="fas fa-arrow-left"></i> Вернуться к кружку
+                </a>
+                
+                <h3 class="mb-1"><i class="fas fa-clipboard-list"></i> Запись на кружок</h3>
+                <p class="text-muted mb-4">{{ course.name }}</p>
+                
+                <form method="POST" action="{{ url_for('enroll_course', course_id=course.id) }}">
+                    <input type="hidden" name="_csrf_token" value="{{ csrf_token() }}">
+                    
+                    <div class="alert alert-info mb-4">
+                        <i class="fas fa-info-circle"></i> Заполните анкету ниже. Преподаватель рассмотрит вашу заявку и примет решение.
+                    </div>
+                    
+                    <!-- Общая информация (для справки) -->
+                    <div class="card bg-light mb-4">
+                        <div class="card-body">
+                            <h6 class="card-title">Ваши данные</h6>
+                            <div class="row g-3">
+                                <div class="col-md-6">
+                                    <div><strong>Имя:</strong> {{ current_user.first_name }} {{ current_user.last_name }}</div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div><strong>Возраст:</strong> {% if current_user.age %}{{ current_user.age }} лет{% else %}—{% endif %}</div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div><strong>Группа:</strong> {{ current_user.group or '—' }}</div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div><strong>Email:</strong> {{ current_user.email }}</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Анкета -->
+                    <h5 class="mb-3">Анкета участника</h5>
+                    
+                    <div class="mb-3">
+                        <label for="experience" class="form-label">
+                            Ваш опыт в этой области <span class="text-danger">*</span>
+                        </label>
+                        <textarea class="form-control" id="experience" name="experience" rows="3" required 
+                            placeholder="Расскажите есть ли у вас опыт в этой области. Например: занимаюсь 2 года, начинающий без опыта и т.п.">{{ experience or '' }}</textarea>
+                        <small class="text-muted">Обязательное поле</small>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="motivation" class="form-label">
+                            Мотивация и цели <span class="text-danger">*</span>
+                        </label>
+                        <textarea class="form-control" id="motivation" name="motivation" rows="3" required
+                            placeholder="Почему вы хотите записаться на этот кружок? Какие цели вы ставите перед собой?">{{ motivation or '' }}</textarea>
+                        <small class="text-muted">Обязательное поле</small>
+                    </div>
+                    
+                    <div class="mb-4">
+                        <label for="notes" class="form-label">
+                            Дополнительные заметки
+                        </label>
+                        <textarea class="form-control" id="notes" name="notes" rows="2"
+                            placeholder="Есть ли что-то ещё, что преподаватель должен знать о вас? (опционально)">{{ notes or '' }}</textarea>
+                        <small class="text-muted">Необязательное поле</small>
+                    </div>
+                    
+                    <div class="d-grid gap-2 d-md-flex justify-content-md-end">
+                        <a href="{{ url_for('course_detail', course_id=course.id) }}" class="btn btn-outline-secondary">
+                            Отмена
+                        </a>
+                        <button type="submit" class="btn btn-primary">
+                            <i class="fas fa-check"></i> Отправить заявку
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
